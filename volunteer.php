@@ -1,67 +1,88 @@
+<?php
+    include 'conn.php';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Volunteer Form | ClubHub</title>
+    <title>ClubHub Volunteer</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
+<div class="background"></div>
+
 <div class="container">
-    <h1>ClubHub Volunteer Registration</h1>
-    <p class="subtitle">Sign up to volunteer for campus events</p>
 
-    <form action="volunteer.php" method="POST">
+    <div class="card">
+        <h1>ClubHub</h1>
+        <p class="subtitle">Volunteer Registration</p>
 
-        <div class="form-group">
-            <label>Full Name</label>
-            <input type="text" name="name" required>
-        </div>
+        <form id="volunteerForm">
 
-        <div class="form-group">
-            <label>Student ID</label>
-            <input type="text" name="student_id" required>
-        </div>
+            <div class="input-group">
+                <label>Full Name</label>
+                <input type="text" id="name" placeholder="Enter your name" required>
+            </div>
 
-        <div class="form-group">
-            <label>Email</label>
-            <input type="email" name="email" required>
-        </div>
+            <div class="input-group">
+                <label>Student ID</label>
+                <input type="text" id="studentId" placeholder="Enter your ID" required>
+            </div>
 
-        <div class="form-group">
-            <label>Phone Number</label>
-            <input type="tel" name="phone" required>
-        </div>
+            <div class="input-group">
+                <label>Email</label>
+                <input type="email" id="email" placeholder="example@email.com" required>
+            </div>
 
-        <div class="form-group">
-            <label>Select Event</label>
-            <select name="event">
-                <option value="">-- Choose Event --</option>
-                <option>Tech Fest</option>
-                <option>Cultural Night</option>
-                <option>Science Fair</option>
-                <option>Orientation Program</option>
-            </select>
-        </div>
+            <div class="input-group">
+                <label>Live Events</label>
+                <select id="event">
+                    <?php
+                    $catagories = mysqli_query($conn,'Select * from events
+                                                where event_availablity = 1');
+                    while($c = mysqli_fetch_array($catagories)){
+                    ?>
+                    <option id="opt" value="<?php echo $c['event_id'] ?>"><?php echo $c['event_name'] ?></option>
+                    <?php } ?>
+                </select>
+            </div>
 
-        <label>Skills</label>
-        <div class="checkbox-group">
-            <label><input type="checkbox" name="skills[]" value="Management"> Management</label>
-            <label><input type="checkbox" name="skills[]" value="Photography"> Photography</label>
-            <label><input type="checkbox" name="skills[]" value="Technical"> Technical</label>
-            <label><input type="checkbox" name="skills[]" value="Design"> Design</label>
-        </div>
-        <br><br>
-        <div class="form-group">
-            <label>Why do you want to volunteer?</label>
-            <textarea name="reason" rows="4"></textarea>
-        </div>
+            <div class="skills-section">
+                <label>Skills</label>
+                <div class="skills">
+                    <button type="button" class="skill">Management</button>
+                    <button type="button" class="skill">Photography</button>
+                    <button type="button" class="skill">Technical</button>
+                    <button type="button" class="skill">Design</button>
+                </div>
+            </div>
 
-        <button type="submit">Register as Volunteer</button>
+            <div class="input-group">
+                <label>Availability</label>
+                <input type="date" id="date">
+            </div>
 
-    </form>
+            <div class="input-group">
+                <label>Why volunteer?</label>
+                <textarea id="reason" placeholder="Tell us why..."></textarea>
+            </div>
+
+            <button type="submit" class="submit-btn">
+                Register as Volunteer
+            </button>
+
+        </form>
+
+    </div>
+
 </div>
 
+<div id="popup" class="popup">
+    Registration Successful!
+</div>
+
+<script src="script.js"></script>
 </body>
 </html>
