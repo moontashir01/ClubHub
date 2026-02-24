@@ -6,7 +6,7 @@ CREATE TABLE events(
     event_id INT PRIMARY KEY auto_increment,
     event_name VARCHAR(255) NOT NULL,
     event_duration DECIMAL(4,2),
-    event_date DATETIME
+    event_date DATETIME,
     event_creator VARCHAR(255),
     Foreign Key (event_creator) REFERENCES clubs(club_name)
 );

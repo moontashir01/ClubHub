@@ -31,7 +31,7 @@
 
         <div class="form-group">
             <label>Phone Number</label>
-            <input type="tel" name="phone">
+            <input type="tel" name="phone" required>
         </div>
 
         <div class="form-group">
@@ -45,21 +45,14 @@
             </select>
         </div>
 
-        <div class="form-group">
-            <label>Skills</label>
-            <div class="checkbox-group">
-                <label><input type="checkbox" name="skills[]" value="Management"> Management</label>
-                <label><input type="checkbox" name="skills[]" value="Photography"> Photography</label>
-                <label><input type="checkbox" name="skills[]" value="Technical"> Technical</label>
-                <label><input type="checkbox" name="skills[]" value="Design"> Design</label>
-            </div>
+        <label>Skills</label>
+        <div class="checkbox-group">
+            <label><input type="checkbox" name="skills[]" value="Management"> Management</label>
+            <label><input type="checkbox" name="skills[]" value="Photography"> Photography</label>
+            <label><input type="checkbox" name="skills[]" value="Technical"> Technical</label>
+            <label><input type="checkbox" name="skills[]" value="Design"> Design</label>
         </div>
-
-        <div class="form-group">
-            <label>Availability</label>
-            <input type="date" name="availability">
-        </div>
-
+        <br><br>
         <div class="form-group">
             <label>Why do you want to volunteer?</label>
             <textarea name="reason" rows="4"></textarea>
