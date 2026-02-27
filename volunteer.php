@@ -1,5 +1,5 @@
 <?php
-    include 'conn.php';
+    include 'con.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
