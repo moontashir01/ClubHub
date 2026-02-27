@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UniLink | Login</title>
+    <title>ClubHub | Login</title>
     <style>
         :root { 
             --pink: #ff4d8d; 
@@ -187,9 +187,9 @@
 
     <script>
         const events = [
-            { img: "https://images.unsplash.com/photo-1578632292335-df3abbb0d586?q=80&w=1600", title: "Connecting Campus Life" },
-            { img: "https://images.unsplash.com/photo-1523580494863-6f3031224c94?q=80&w=1600", title: "Discover New Societies" },
-            { img: "https://images.unsplash.com/photo-1614728263952-84ea256f9679?q=80&w=1600", title: "Grow Your Network" }
+            { img: 'images/blood-donation-5427229_1920.jpg', title: "Socio Camp" },
+            { img: 'images/athlete-sport-design-illustration-art-vector.jpg', title: "NFL" },
+            { img: 'images/debate-1.png', title: "Debate Competetion" }
         ];
 
         const slider = document.getElementById('event-slider');
