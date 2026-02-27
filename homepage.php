@@ -131,6 +131,9 @@
             .slider-frame { display: none; }
             .login-side { flex: 1; }
         }
+        .error{color: red; font-weight: bold; margin-bottom: 10px;
+
+        }
     </style>
 </head>
 <body>
@@ -152,11 +155,22 @@
                 <h1>Welcome Back</h1>
                 <p style="color: #666; margin-bottom: 35px;">Enter your credentials to manage your club.</p>
                 
+        <?php if (isset($_SESSION['login_error'])): ?>
+         <div class="error">
+        <?php 
+            echo $_SESSION['login_error']; 
+            unset($_SESSION['login_error']); // This makes it disappear on reload!
+        ?>
+        </div>
+        <?php endif; ?>
+
+
                 <form action="login.php" method="POST">
                     <div class="input-group">
                         <label>Email Address</label>
                         <input type="email" name="Email" placeholder="name@university.edu" required>
                     </div>
+                    
                     <div class="input-group">
                         <label>Password</label>
                         <input type="password" name="Password" placeholder="••••••••" required>
