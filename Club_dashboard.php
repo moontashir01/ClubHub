@@ -1,6 +1,6 @@
 <?php
     include 'connection.php';
-    // session_start();
+    session_start();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -34,9 +34,7 @@
     <script>
         // Data
     <?php
-        // $email = $_SESSION['Email'];
-        $email = 'test@northsouth.edu';
-
+        isset($_SESSION['Email'])? $email = $_SESSION['Email'] : $email = "test@northsouth.edu";
         $query = mysqli_query($con,"
             SELECT *
             FROM `user`
