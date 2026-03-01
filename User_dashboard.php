@@ -1,3 +1,17 @@
+<?php
+session_start();
+include 'connection.php';
+
+if(!isset($_SESSION['ID'])){
+    header("Location:homepage.php");
+}
+
+$id = $_SESSION['ID'];
+$name = $_SESSION['Name'];
+?>
+
+
+
 <!DOCTYPE html>
 
 <html lang="en">
