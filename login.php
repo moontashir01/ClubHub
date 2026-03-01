@@ -18,6 +18,8 @@
               if (password_verify($password, $row['Password'])) {
                   $_SESSION['ID'] = $row['ID'];
                   $_SESSION['Name'] = $row['Name'];
+                  $_SESSION['Email'] = $row['email'];
+
                   return true;
               }
           }
