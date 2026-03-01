@@ -4,55 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ClubHub | Dashboard</title>
-    <style>
-        :root { 
-            --pink: #ff4d8d;
-            --dark-bg: #0b0b13; 
-            --card: #161621;
-            --transition: 0.8s cubic-bezier(0.4, 0, 0.2, 1); 
-        }
-        
-        html { scroll-snap-type: y mandatory; scroll-behavior: smooth; }
-        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--dark-bg); color: white; overflow-x: hidden; }
-
-        /* --- NAVBAR --- */
-        nav { 
-            display: flex; justify-content: space-between; padding: 20px 5%; 
-            background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
-            position: fixed; width: 90%; z-index: 1000; align-items: center; 
-        }
-        .logo { font-size: 26px; font-weight: 900; letter-spacing: -1px; }
-
-        /* --- HERO SLIDER --- */
-        .hero-section { position: relative; height: 100vh; width: 100%; scroll-snap-align: start; overflow: hidden; }
-        .slide { 
-            position: absolute; inset: 0; opacity: 0; transition: var(--transition); 
-            background-size: cover; background-position: center 20%; 
-            display: flex; align-items: center; padding: 0 5%; 
-        }
-        .slide.active { opacity: 1; z-index: 1; }
-        .slide::after { 
-            content: ''; position: absolute; inset: 0; 
-            background: linear-gradient(90deg, var(--dark-bg) 5%, transparent 70%),
-                        linear-gradient(0deg, var(--dark-bg) 0%, transparent 60%);
-            z-index: 2;
-        }
-        .content { position: relative; z-index: 10; max-width: 650px; }
-        h1 { font-size: 4rem; margin: 0 0 15px 0; font-weight: 800; }
-        .description { font-size: 1.1rem; color: #ccc; line-height: 1.6; margin-bottom: 30px; }
-
-        /* --- DASHBOARD SECTION --- */
-        .dashboard-section { position: relative; min-height: 100vh; padding: 120px 5% 50px 5%; background: var(--dark-bg); scroll-snap-align: start; z-index: 20; }
-        .header { font-size: 2rem; margin-bottom: 30px; font-weight: 800; border-left: 4px solid var(--pink); padding-left: 15px; }
-        .portal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 25px; }
-        .portal-card { background: var(--card); border-radius: 8px; padding: 30px; text-align: center; cursor: pointer; transition: 0.4s; border: 1px solid transparent; }
-        .portal-card:hover { transform: translateY(-15px); border: 1px solid var(--pink); }
-
-        /* --- MODAL --- */
-        #modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:3000; align-items:center; justify-content:center; }
-        .modal-content { background: var(--card); padding: 40px; border-radius: 12px; width: 400px; border: 1px solid var(--pink); }
-    </style>
-</head>
+    <link rel="stylesheet" href="styles.css">
 <body>
 
     <nav>
