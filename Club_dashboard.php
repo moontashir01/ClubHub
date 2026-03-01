@@ -12,7 +12,7 @@
 <body>
 
     <nav>
-        <div class="logo">Club Hub</div>
+        <div class="logo">ClubHub</div>
     </nav>
 
     <div class="hero-section" id="hero-slider"></div>
@@ -25,7 +25,9 @@
     <div id="modal-overlay">
         <div class="modal-content">
             <h2 id="modal-title">Action</h2>
-            <input type="text" placeholder="Enter details here..." style="width:100%; padding:10px; margin:15px 0; background:#0b0b13; border:1px solid #444; color:white; border-radius:4px; box-sizing:border-box;">
+            <!-- <input type="text" placeholder="Enter details here..." style="width:100%; padding:10px; margin:15px 0; background:#0b0b13; border:1px solid #444; color:white; border-radius:4px; box-sizing:border-box;"> -->
+            <div id="modal-body"></div>
+            <br>
             <button onclick="closeModal()" style="background:var(--pink); border:none; padding:10px 20px; border-radius:4px; color:white; cursor:pointer;">Confirm</button>
             <button onclick="closeModal()" style="background:transparent; border:none; color:#888; cursor:pointer; margin-left:10px;">Cancel</button>
         </div>
@@ -89,14 +91,79 @@
             dashGrid.appendChild(card);
         });
 
+        <?php
+            $clubMembers = mysqli_query($con,"
+            SELECT club_members.student_id as 'SID',
+                    students.full_name as 'name',
+                    club_members.Role as 'role'
+            FROM `club_members` INNER JOIN `clubs`
+            ON club_members.club_id = clubs.club_id
+            INNER JOIN students
+            ON club_members.student_id = students.student_id
+            WHERE clubs.club_name = '$clubName' AND club_members.active = 1
+            ");
+        ?>
+
         // Modal Functions
         function openModal(title) {
+
             document.getElementById('modal-title').innerText = title;
             document.getElementById('modal-overlay').style.display = 'flex';
-        }
-        function closeModal() {
-            document.getElementById('modal-overlay').style.display = 'none';
-        }
+            if (title === "View Members") {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-body').innerHTML = `
+                <style>
+                    .table-container { 
+                        max-height: 300px; 
+                        overflow-y: auto; 
+                        margin-top: 15px; 
+                        border: 1px solid #333; 
+                    }
+                    .member-table { width: 100%; border-collapse: collapse; color: white; font-size: 0.9rem; }
+                    .member-table th { 
+                        position: sticky; top: 0; 
+                        background: var(--card); 
+                        padding: 12px; border-bottom: 2px solid var(--pink); 
+                        color: var(--pink); text-align: left;
+                    }
+                    .member-table td { padding: 10px; border-bottom: 1px solid #222; }
+                    /* Custom Scrollbar for a sleek look */
+                    .table-container::-webkit-scrollbar { width: 6px; }
+                    .table-container::-webkit-scrollbar-thumb { background: var(--pink); border-radius: 10px; }
+                </style>
+        <div class="table-container">
+            <table class="member-table">
+                        <thead>
+                            <tr><th>ID</th><th>Name</th><th>Role</th></tr>
+                        </thead>
+                <tbody>
+                    <?php
+                    // Assuming $clubMembers is already fetched
+                    mysqli_data_seek($clubMembers, 0); // Reset pointer to start
+                    while($row = mysqli_fetch_assoc($clubMembers)) {
+                        echo "<tr>";
+                        echo "<td>".htmlspecialchars($row['SID'])."</td>";
+                        echo "<td>".htmlspecialchars($row['name'])."</td>";
+                        echo "<td>".htmlspecialchars($row['role'])."</td>";
+                        echo "</tr>";
+                    }
+                    ?>
+                </tbody>
+            </table>
+        </div>
+    `;
+} else {
+
+        document.getElementById('modal-body').innerHTML =
+            "<input type='text' placeholder='Enter details' style='width:100%; padding:10px;'>";
+
+    }
+}
+
+
+    function closeModal(){
+        document.getElementById('modal-overlay').style.display = 'none';
+    }
     </script>
 </body>
 </html>
