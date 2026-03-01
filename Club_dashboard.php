@@ -1,3 +1,7 @@
+<?php
+    include 'connection.php';
+    // session_start();
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -29,8 +33,31 @@
 
     <script>
         // Data
+    <?php
+        // $email = $_SESSION['Email'];
+        $email = 'test@northsouth.edu';
+
+        $query = mysqli_query($con,"
+            SELECT *
+            FROM `user`
+            INNER JOIN `students`
+                ON `user`.email = students.student_email
+            INNER JOIN `club_members`
+                ON club_members.student_id = students.student_id
+            INNER JOIN `clubs`
+                ON club_members.club_id = clubs.club_id
+            WHERE `user`.email = '$email'
+        ");
+
+        if(!$query){
+            die(mysqli_error($con)); // shows SQL errors
+        }
+
+        $row = mysqli_fetch_assoc($query);
+        $clubName = $row ? $row['club_name'] : "No Club Found";
+    ?>
         const contentData = [
-            { title: 'Welcome Commander', desc: 'Manage your club operations effectively.', img: 'images/club_dashboard_cover.jpg' }
+            { title: 'Welcome to <?php echo htmlspecialchars($clubName); ?> ', desc: 'Manage your club operations effectively.', img: 'images/club_dashboard_cover.jpg' }
         ];
 
         const dashboardActions = [
