@@ -29,7 +29,7 @@ SET time_zone = "+00:00";
 
 CREATE TABLE `clubs` (
   `club_id` int(11) NOT NULL,
-  `club_name` varchar(255) NOT NULL
+  `club_name` varchar(255)  NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -123,13 +123,6 @@ CREATE TABLE `volunteer_req` (
   `event_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Indexes for dumped tables
---
-
---
--- Indexes for table `clubs`
---
 ALTER TABLE `clubs`
   ADD PRIMARY KEY (`club_id`),
   ADD UNIQUE KEY `club_name` (`club_name`);
@@ -208,6 +201,18 @@ ALTER TABLE `volunteer_req`
   ADD CONSTRAINT `volunteer_req_ibfk_2` FOREIGN KEY (`event_id`) REFERENCES `events` (`event_id`);
 COMMIT;
 
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+CREATE TABLE `club_members` (
+  `member_id` int(11) NOT NULL AUTO_INCREMENT,
+  `student_id` int(10) NOT NULL, 
+  `club_id` int(11) NOT NULL, 
+  `Role` varchar(255) DEFAULT NULL,
+  `Skills` varchar(255) DEFAULT NULL,
+  `active` TINYINT(1) DEFAULT 1,
+  PRIMARY KEY (`member_id`),
+  FOREIGN KEY (`student_id`) REFERENCES `students`(`student_id`),
+  FOREIGN KEY (`club_id`) REFERENCES `clubs`(`club_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO `club_members` (`student_id`, `club_id`, `Role`) VALUES
+('223341','2','Member'),
+('2233440', '1', 'Member');
