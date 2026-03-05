@@ -8,11 +8,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ClubHub | Dashboard</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=<?php echo filemtime('styles.css'); ?>">
+</head>
 <body>
 
     <nav>
         <div class="logo">ClubHub</div>
+        <?php
+            $displayName = isset($_SESSION['Name']) ? $_SESSION['Name'] : null;
+            if (!$displayName && isset($_SESSION['Email'])) {
+                $displayName = explode('@', $_SESSION['Email'])[0];
+            }
+            if (!$displayName) {
+                $displayName = "Guest";
+            }
+        ?>
+        <div class="profile-menu" id="profile-menu">
+            <button class="profile-trigger" id="profile-trigger" type="button" aria-expanded="false"><?php echo htmlspecialchars($displayName); ?></button>
+            <div class="profile-dropdown">
+                <label class="theme-toggle-item" for="theme-switch">
+                    <span>Change Theme</span>
+                    <span class="theme-switch">
+                        <input type="checkbox" id="theme-switch" aria-label="Toggle theme">
+                        <span class="theme-slider"></span>
+                    </span>
+                </label>
+                <a class="logout-link" href="logout.php">Log out</a>
+            </div>
+        </div>
     </nav>
 
     <div class="hero-section" id="hero-slider"></div>
@@ -29,7 +52,7 @@
             <div id="modal-body"></div>
             <br>
             <button onclick="closeModal()" style="background:var(--pink); border:none; padding:10px 20px; border-radius:4px; color:white; cursor:pointer;">Confirm</button>
-            <button onclick="closeModal()" style="background:transparent; border:none; color:#888; cursor:pointer; margin-left:10px;">Cancel</button>
+            <button onclick="closeModal()" style="background:transparent; border:none; color:var(--muted); cursor:pointer; margin-left:10px;">Cancel</button>
         </div>
     </div>
 
@@ -86,7 +109,7 @@
             card.innerHTML = `
                 <div style="font-size: 3rem; margin-bottom: 15px;">${action.icon}</div>
                 <div style="font-weight:bold; font-size: 1.2rem;">${action.title}</div>
-                <p style="color: #888; font-size: 0.9rem;">${action.desc}</p>
+                <p style="color: var(--muted); font-size: 0.9rem;">${action.desc}</p>
             `;
             dashGrid.appendChild(card);
         });
@@ -117,16 +140,16 @@
                         max-height: 300px; 
                         overflow-y: auto; 
                         margin-top: 15px; 
-                        border: 1px solid #333; 
+                        border: 1px solid var(--table-border); 
                     }
-                    .member-table { width: 100%; border-collapse: collapse; color: white; font-size: 0.9rem; }
+                    .member-table { width: 100%; border-collapse: collapse; color: var(--text); font-size: 0.9rem; }
                     .member-table th { 
                         position: sticky; top: 0; 
                         background: var(--card); 
                         padding: 12px; border-bottom: 2px solid var(--pink); 
                         color: var(--pink); text-align: left;
                     }
-                    .member-table td { padding: 10px; border-bottom: 1px solid #222; }
+                    .member-table td { padding: 10px; border-bottom: 1px solid var(--table-row-border); }
                     /* Custom Scrollbar for a sleek look */
                     .table-container::-webkit-scrollbar { width: 6px; }
                     .table-container::-webkit-scrollbar-thumb { background: var(--pink); border-radius: 10px; }
@@ -155,7 +178,7 @@
 } else {
 
         document.getElementById('modal-body').innerHTML =
-            "<input type='text' placeholder='Enter details' style='width:100%; padding:10px;'>";
+            "<input type='text' placeholder='Enter details' style='width:100%; padding:10px; background:var(--card); color:var(--text); border:1px solid var(--table-border); border-radius:6px;'>";
 
     }
 }
@@ -164,6 +187,47 @@
     function closeModal(){
         document.getElementById('modal-overlay').style.display = 'none';
     }
+
+    // Profile dropdown (click to open, click outside to close)
+    const profileMenu = document.getElementById('profile-menu');
+    const profileTrigger = document.getElementById('profile-trigger');
+    profileTrigger.addEventListener('click', function (event) {
+        event.stopPropagation();
+        profileMenu.classList.toggle('open');
+        profileTrigger.setAttribute('aria-expanded', profileMenu.classList.contains('open') ? 'true' : 'false');
+    });
+
+    document.addEventListener('click', function (event) {
+        if (!profileMenu.contains(event.target)) {
+            profileMenu.classList.remove('open');
+            profileTrigger.setAttribute('aria-expanded', 'false');
+        }
+    });
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            profileMenu.classList.remove('open');
+            profileTrigger.setAttribute('aria-expanded', 'false');
+        }
+    });
+
+    // Theme toggle (dark default, light optional)
+    const themeSwitch = document.getElementById('theme-switch');
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light') {
+        document.body.classList.add('light-theme');
+        themeSwitch.checked = true;
+    }
+
+    themeSwitch.addEventListener('change', function () {
+        if (this.checked) {
+            document.body.classList.add('light-theme');
+            localStorage.setItem('theme', 'light');
+        } else {
+            document.body.classList.remove('light-theme');
+            localStorage.setItem('theme', 'dark');
+        }
+    });
     </script>
 </body>
 </html>
