@@ -8,7 +8,7 @@
 
       public function authenticate($email, $password) {
           $email = trim($email);
-          $stmt = $this->db->prepare("SELECT ID, Name, Password FROM user WHERE email = ?");
+          $stmt = $this->db->prepare("SELECT ID, Name, email, Password FROM user WHERE email = ?");
           $stmt->bind_param("s", $email);
           $stmt->execute();
           $result = $stmt->get_result();
@@ -30,8 +30,7 @@
   if (isset($_POST['submit'])) {
       $email = $_POST['Email'];
       $password = $_POST['Password'];
-
-      if (isset($con)) {
+          if (isset($con)) {
           $user = new User($con);
           if ($user->authenticate($email, $password)) {
               header("Location: User_dashboard.php");
