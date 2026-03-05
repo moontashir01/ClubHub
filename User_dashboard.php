@@ -2,11 +2,11 @@
 session_start();
 include 'connection.php';
 
-if(!isset($_SESSION['ID'])){
+if(!isset($_SESSION['Email'])){
     header("Location:homepage.php");
 }
 
-$id = $_SESSION['ID'];
+$email=$_SESSION['Email'];
 $name = $_SESSION['Name'];
 ?>
 

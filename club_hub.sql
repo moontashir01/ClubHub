@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Feb 27, 2026 at 08:02 AM
+-- Generation Time: Mar 05, 2026 at 05:04 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -29,7 +29,7 @@ SET time_zone = "+00:00";
 
 CREATE TABLE `clubs` (
   `club_id` int(11) NOT NULL,
-  `club_name` varchar(255)  NOT NULL
+  `club_name` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -72,21 +72,20 @@ INSERT INTO `events` (`event_id`, `event_name`, `event_duration`, `event_date`, 
 CREATE TABLE `students` (
   `student_id` int(10) NOT NULL,
   `full_name` varchar(255) NOT NULL,
-  `semester` int(2) NOT NULL,
   `student_email` varchar(255) NOT NULL,
   `address` varchar(255) NOT NULL,
   `DOB` date DEFAULT NULL,
-  `contact` varchar(15) DEFAULT NULL,
-  `department` varchar(255) DEFAULT NULL
+  `contact` varchar(15) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `students`
 --
 
-INSERT INTO `students` (`student_id`, `full_name`, `semester`, `student_email`, `address`, `DOB`, `contact`, `department`) VALUES
-(223341, 'Nasiruddin Patwary', 12, 'derby.patwary@northsouth.edu', 'mirza abbas st, Dhaka-1200', '1990-01-01', '01994449087', 'BBA'),
-(2233440, 'Chanda Abbas', 8, 'chanda.abbas@northsouth.edu', '420 Chanda Street, Dhaka-1000', '1968-12-01', '0194438309', 'ECO');
+INSERT INTO `students` (`student_id`, `full_name`, `student_email`, `address`, `DOB`, `contact`) VALUES
+(223341, 'Nasiruddin Patwary', 'derby.patwary@northsouth.edu', 'mirza abbas st, Dhaka-1200', '1990-01-01', '01994449087'),
+(2233440, 'Chanda Abbas', 'chanda.abbas@northsouth.edu', '420 Chanda Street, Dhaka-1000', '1968-12-01', '0194438309'),
+(2147483647, 'Ridwanul Hoque', 'sagor@gmail.com', '', '2000-11-08', '1886342215');
 
 -- --------------------------------------------------------
 
@@ -95,19 +94,21 @@ INSERT INTO `students` (`student_id`, `full_name`, `semester`, `student_email`, 
 --
 
 CREATE TABLE `user` (
-  `ID` int(11) NOT NULL,
   `email` varchar(255) NOT NULL,
   `Name` varchar(100) NOT NULL,
   `Password` varchar(255) NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `Role` varchar(50) NOT NULL DEFAULT 'student'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `user`
 --
 
-INSERT INTO `user` (`ID`, `email`, `Name`, `Password`, `created_at`) VALUES
-(1, 'testuser@example.com', 'John Doe', '$2y$10$YQgxMOAcd4Tv6P1U6tMApuTgATdja5jL1PQCyvOk/Q4D6I9IagY4q', '2026-02-27 05:38:05');
+INSERT INTO `user` (`email`, `Name`, `Password`, `created_at`, `Role`) VALUES
+('nsucdc@northsouth.edu', 'NSU CDC', '$2y$10$hvht9iM/cjg3NsEMlINjkebFYLU2z2ZQZPz0Vi4fkACg7YDshdsv2', '2026-03-05 15:59:25', 'Executive Member'),
+('sagor@gmail.com', 'Ridwanul Hoque', '$2y$10$4rbA7bPKCFHdzx.PnC2SU.IaBvhxa7uMSYubu0zWkNFI3KHyH1tca', '2026-03-04 16:46:13', 'student'),
+('testuser@example.com', 'John Doe', '$2y$10$YQgxMOAcd4Tv6P1U6tMApuTgATdja5jL1PQCyvOk/Q4D6I9IagY4q', '2026-02-27 05:38:05', 'student');
 
 -- --------------------------------------------------------
 
@@ -123,6 +124,13 @@ CREATE TABLE `volunteer_req` (
   `event_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `clubs`
+--
 ALTER TABLE `clubs`
   ADD PRIMARY KEY (`club_id`),
   ADD UNIQUE KEY `club_name` (`club_name`);
@@ -144,8 +152,7 @@ ALTER TABLE `students`
 -- Indexes for table `user`
 --
 ALTER TABLE `user`
-  ADD PRIMARY KEY (`ID`),
-  ADD UNIQUE KEY `email` (`email`);
+  ADD PRIMARY KEY (`email`);
 
 --
 -- Indexes for table `volunteer_req`
@@ -172,12 +179,6 @@ ALTER TABLE `events`
   MODIFY `event_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
--- AUTO_INCREMENT for table `user`
---
-ALTER TABLE `user`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
-
---
 -- AUTO_INCREMENT for table `volunteer_req`
 --
 ALTER TABLE `volunteer_req`
@@ -201,18 +202,6 @@ ALTER TABLE `volunteer_req`
   ADD CONSTRAINT `volunteer_req_ibfk_2` FOREIGN KEY (`event_id`) REFERENCES `events` (`event_id`);
 COMMIT;
 
-CREATE TABLE `club_members` (
-  `member_id` int(11) NOT NULL AUTO_INCREMENT,
-  `student_id` int(10) NOT NULL, 
-  `club_id` int(11) NOT NULL, 
-  `Role` varchar(255) DEFAULT NULL,
-  `Skills` varchar(255) DEFAULT NULL,
-  `active` TINYINT(1) DEFAULT 1,
-  PRIMARY KEY (`member_id`),
-  FOREIGN KEY (`student_id`) REFERENCES `students`(`student_id`),
-  FOREIGN KEY (`club_id`) REFERENCES `clubs`(`club_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-INSERT INTO `club_members` (`student_id`, `club_id`, `Role`) VALUES
-('223341','2','Member'),
-('2233440', '1', 'Member');
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
