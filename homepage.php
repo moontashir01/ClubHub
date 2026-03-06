@@ -163,10 +163,22 @@ include 'connection.php';
                         <input type="email" name="Email" required>
                     </div>
                     <div style="display: flex; gap: 10px;">
-                        <div class="input-group" style="flex:1;">
-                            <label>Student Id</label>
-                            <input type="text" name="ID" required>
-                        </div>
+                        
+                 <div class="input-group" style="flex:1;">
+                   <label>Student Id</label>
+                    <input 
+                    type="text" 
+                     name="ID" 
+                    required 
+                    minlength="10" 
+                    maxlength="10" 
+                    pattern="\d{10}" 
+                    title="Student ID must be exactly 10 digits"
+                    >
+                  </div>
+
+
+
                         <div class="input-group" style="flex:1;">
                             <label>Password</label>
                             <input type="password" name="Password" required>
@@ -179,7 +191,14 @@ include 'connection.php';
                         </div>
                         <div class="input-group" style="flex:1;">
                             <label>Phone</label>
-                            <input type="text" name="Phone" required>
+                            <input
+                             type="text"
+                              name="Phone" 
+                              required
+                              minlength="11"
+                              maxlength="11"
+                              patter="\d{11}"
+                              title="Phone Number must be 11 digits">
                         </div>
                     </div>
                     <button type="submit" name="submit" class="login-btn">Create Account</button>

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 05, 2026 at 05:04 PM
+-- Generation Time: Mar 06, 2026 at 07:07 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -70,7 +70,7 @@ INSERT INTO `events` (`event_id`, `event_name`, `event_duration`, `event_date`, 
 --
 
 CREATE TABLE `students` (
-  `student_id` int(10) NOT NULL,
+  `student_id` varchar(20) NOT NULL,
   `full_name` varchar(255) NOT NULL,
   `student_email` varchar(255) NOT NULL,
   `address` varchar(255) NOT NULL,
@@ -83,9 +83,9 @@ CREATE TABLE `students` (
 --
 
 INSERT INTO `students` (`student_id`, `full_name`, `student_email`, `address`, `DOB`, `contact`) VALUES
-(223341, 'Nasiruddin Patwary', 'derby.patwary@northsouth.edu', 'mirza abbas st, Dhaka-1200', '1990-01-01', '01994449087'),
-(2233440, 'Chanda Abbas', 'chanda.abbas@northsouth.edu', '420 Chanda Street, Dhaka-1000', '1968-12-01', '0194438309'),
-(2147483647, 'Ridwanul Hoque', 'sagor@gmail.com', '', '2000-11-08', '1886342215');
+('2231446042', 'Ridwanul Hoque', 'sagor@gmail.com', '', '2001-11-05', '01886342215'),
+('223341', 'Nasiruddin Patwary', 'derby.patwary@northsouth.edu', 'mirza abbas st, Dhaka-1200', '1990-01-01', '01994449087'),
+('2233440', 'Chanda Abbas', 'chanda.abbas@northsouth.edu', '420 Chanda Street, Dhaka-1000', '1968-12-01', '0194438309');
 
 -- --------------------------------------------------------
 
@@ -107,19 +107,19 @@ CREATE TABLE `user` (
 
 INSERT INTO `user` (`email`, `Name`, `Password`, `created_at`, `Role`) VALUES
 ('nsucdc@northsouth.edu', 'NSU CDC', '$2y$10$hvht9iM/cjg3NsEMlINjkebFYLU2z2ZQZPz0Vi4fkACg7YDshdsv2', '2026-03-05 15:59:25', 'Executive Member'),
-('sagor@gmail.com', 'Ridwanul Hoque', '$2y$10$4rbA7bPKCFHdzx.PnC2SU.IaBvhxa7uMSYubu0zWkNFI3KHyH1tca', '2026-03-04 16:46:13', 'student'),
+('sagor@gmail.com', 'Ridwanul Hoque', '$2y$10$ILf1u8/jN.nfs.l80sb0/Ogfn0dxnxy/Jv1E4vj11fyG0nnKk8IXi', '2026-03-06 06:05:05', 'student'),
 ('testuser@example.com', 'John Doe', '$2y$10$YQgxMOAcd4Tv6P1U6tMApuTgATdja5jL1PQCyvOk/Q4D6I9IagY4q', '2026-02-27 05:38:05', 'student');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `volunteer_req`
+-- Table structure for table `volunteer_requests`
 --
 
-CREATE TABLE `volunteer_req` (
+CREATE TABLE `volunteer_requests` (
   `req_ID` int(11) NOT NULL,
   `full_name` varchar(255) NOT NULL,
-  `student_id` int(10) NOT NULL,
+  `student_id` bigint(20) NOT NULL,
   `student_email` varchar(255) DEFAULT NULL,
   `event_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -155,12 +155,10 @@ ALTER TABLE `user`
   ADD PRIMARY KEY (`email`);
 
 --
--- Indexes for table `volunteer_req`
+-- Indexes for table `volunteer_requests`
 --
-ALTER TABLE `volunteer_req`
-  ADD PRIMARY KEY (`req_ID`),
-  ADD KEY `student_id` (`student_id`),
-  ADD KEY `event_id` (`event_id`);
+ALTER TABLE `volunteer_requests`
+  ADD PRIMARY KEY (`req_ID`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -179,9 +177,9 @@ ALTER TABLE `events`
   MODIFY `event_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
--- AUTO_INCREMENT for table `volunteer_req`
+-- AUTO_INCREMENT for table `volunteer_requests`
 --
-ALTER TABLE `volunteer_req`
+ALTER TABLE `volunteer_requests`
   MODIFY `req_ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
@@ -193,13 +191,6 @@ ALTER TABLE `volunteer_req`
 --
 ALTER TABLE `events`
   ADD CONSTRAINT `events_ibfk_1` FOREIGN KEY (`event_creator`) REFERENCES `clubs` (`club_name`);
-
---
--- Constraints for table `volunteer_req`
---
-ALTER TABLE `volunteer_req`
-  ADD CONSTRAINT `volunteer_req_ibfk_1` FOREIGN KEY (`student_id`) REFERENCES `students` (`student_id`),
-  ADD CONSTRAINT `volunteer_req_ibfk_2` FOREIGN KEY (`event_id`) REFERENCES `events` (`event_id`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

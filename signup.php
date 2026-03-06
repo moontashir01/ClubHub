@@ -24,9 +24,10 @@ class User {
 
         // 1. Check if Email already exists
         $verify_query = mysqli_query($this->con, "SELECT email FROM user WHERE email='$email'");
+        $verify_query2 = mysqli_query($this->con, "SELECT student_id FROM students WHERE student_id='$student_id'");
         
-        if(mysqli_num_rows($verify_query) != 0) {
-            $_SESSION['msg'] = "This Email is already registered.";
+        if(mysqli_num_rows($verify_query) != 0||mysqli_num_rows($verify_query2) != 0) {
+            $_SESSION['msg'] = "This Email or ID is already registered.";
             $_SESSION['msg_type'] = "error"; 
             header("Location: homepage.php");
             exit();
