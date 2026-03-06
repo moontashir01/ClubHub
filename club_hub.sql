@@ -191,6 +191,16 @@ ALTER TABLE `volunteer_requests`
 --
 ALTER TABLE `events`
   ADD CONSTRAINT `events_ibfk_1` FOREIGN KEY (`event_creator`) REFERENCES `clubs` (`club_name`);
+
+CREATE TABLE club_members(
+  `member_id` INT PRIMARY KEY AUTO_INCREMENT,
+  `student_id` varchar(20),
+  `club_id` INT (11),
+  `Role` VARCHAR(255),
+  `active` BINARY DEFAULT 1,
+  Foreign Key (`student_id`) REFERENCES `students`(`student_id`),
+  Foreign Key (`club_id`) REFERENCES `clubs`(`club_id`)
+);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
