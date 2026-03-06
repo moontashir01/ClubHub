@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Perspective 360 Viewer</title>
+    <title>club hub</title>
     
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css"/>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
@@ -14,7 +14,7 @@
 
         /* 1. The Container (Pannellum moves this) */
         .hotspot-container {
-            width: 192px;
+            width: 292px;
             height: 384px;
             perspective: 600px; /* Depth starts here */
         }
@@ -34,6 +34,13 @@
             font-weight: bold;
             transition: all 0.3s ease;
             backface-visibility: hidden;
+        }
+
+        /* NEW: Yellow color change when clicked */
+        .tall-button.clicked {
+            background: rgba(255, 255, 0, 0.5);
+            border-color: #ffff00;
+            color: #000;
         }
 
         /* Specific 3D angles */
@@ -91,6 +98,12 @@
         button.classList.add('tall-button');
         button.classList.add(args.className);
         button.innerHTML = args.label;
+
+        // Added click event to change color to yellow
+        button.addEventListener('click', function() {
+            this.classList.toggle('clicked');
+        });
+
         hotSpotDiv.appendChild(button);
     }
 </script>
