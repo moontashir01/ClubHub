@@ -1,6 +1,13 @@
 <?php
-    include 'connection.php';
-    session_start();
+session_start();
+include 'connection.php';
+
+if(!isset($_SESSION['Email'])){
+    header("Location:homepage.php");
+}
+
+$email=$_SESSION['Email'];
+$name = $_SESSION['Name'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -57,9 +64,9 @@
     </div>
 
     <script>
-        // Data
+        
     <?php
-        isset($_SESSION['Email'])? $email = $_SESSION['Email'] : $email = "test@northsouth.edu";
+        isset($_SESSION['Email'])? $email = $_SESSION['Email'] : $email = "";
         $query = mysqli_query($con,"
             SELECT *
             FROM `user`
@@ -90,7 +97,7 @@
             { title: 'Event Logs', icon: '📝', desc: 'Review past and upcoming activities.' }
         ];
 
-        // Populate Slider
+        
         const hero = document.getElementById('hero-slider');
         contentData.forEach(item => {
             const slide = document.createElement('div');
@@ -100,7 +107,7 @@
             hero.appendChild(slide);
         });
 
-        // Populate Dashboard
+        
         const dashGrid = document.getElementById('dashboard-grid');
         dashboardActions.forEach(action => {
             const card = document.createElement('div');
@@ -127,7 +134,7 @@
             ");
         ?>
 
-        // Modal Functions
+        
         function openModal(title) {
 
             document.getElementById('modal-title').innerText = title;
@@ -161,7 +168,7 @@
                         </thead>
                 <tbody>
                     <?php
-                    // Assuming $clubMembers is already fetched
+                    
                     mysqli_data_seek($clubMembers, 0); // Reset pointer to start
                     while($row = mysqli_fetch_assoc($clubMembers)) {
                         echo "<tr>";
@@ -188,7 +195,7 @@
         document.getElementById('modal-overlay').style.display = 'none';
     }
 
-    // Profile dropdown (click to open, click outside to close)
+    
     const profileMenu = document.getElementById('profile-menu');
     const profileTrigger = document.getElementById('profile-trigger');
     profileTrigger.addEventListener('click', function (event) {
@@ -211,7 +218,7 @@
         }
     });
 
-    // Theme toggle (dark default, light optional)
+    
     const themeSwitch = document.getElementById('theme-switch');
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'light') {

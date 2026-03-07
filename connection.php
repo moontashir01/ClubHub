@@ -5,7 +5,7 @@
     $db_name = 'club_hub';
     
     try {
-        // Use $con consistently
+        
         $con = mysqli_connect($db_server, $db_user, $db_pass, $db_name);
     } catch(mysqli_sql_exception) {
         echo "Not Connected";

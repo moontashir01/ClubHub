@@ -1,7 +1,7 @@
 <?php
 include 'connection.php';
 
-$plain_password = 'password123'; // This is what you will type in the login box
+$plain_password = 'password123'; 
 $hashed_password = password_hash($plain_password, PASSWORD_DEFAULT);
 $email = 'testuser@example.com';
 

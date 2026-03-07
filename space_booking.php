@@ -12,14 +12,14 @@
         body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #000; }
         #panorama { width: 100%; height: 100vh; }
 
-        /* 1. The Container (Pannellum moves this) */
+        
         .hotspot-container {
             width: 292px;
             height: 384px;
-            perspective: 600px; /* Depth starts here */
+            perspective: 600px; 
         }
 
-        /* 2. The Button (We rotate this) */
+        
         .tall-button {
             width: 100%;
             height: 100%;
@@ -36,14 +36,14 @@
             backface-visibility: hidden;
         }
 
-        /* NEW: Yellow color change when clicked */
+        
         .tall-button.clicked {
             background: rgba(255, 255, 0, 0.5);
             border-color: #ffff00;
             color: #000;
         }
 
-        /* Specific 3D angles */
+        
         .left-rotation { transform: rotateY(0deg); }
         .right-rotation { transform: rotateY(-45deg); }
 
@@ -77,7 +77,7 @@
             {
                 "pitch": 0,
                 "yaw": 90,
-                "cssClass": "hotspot-container", // Pannellum targets this
+                "cssClass": "hotspot-container", 
                 "createTooltipFunc": hotspotWrapper,
                 "createTooltipArgs": { "label": "LEFT BOX", "className": "left-rotation" }
             },
@@ -91,7 +91,7 @@
         ]
     });
 
-    // Function to build the 3D button inside the container
+    
     function hotspotWrapper(hotSpotDiv, args) {
         hotSpotDiv.classList.add('hotspot-container');
         const button = document.createElement('div');
@@ -99,7 +99,7 @@
         button.classList.add(args.className);
         button.innerHTML = args.label;
 
-        // Added click event to change color to yellow
+       
         button.addEventListener('click', function() {
             this.classList.toggle('clicked');
         });

@@ -10,19 +10,18 @@ class User {
     }
 
     public function createAccount($ID, $name, $email, $password, $phone, $dob) {
-        // Sanitize inputs
+        
         $student_id = mysqli_real_escape_string($this->con, $ID);
         $name       = mysqli_real_escape_string($this->con, $name);
         $email      = mysqli_real_escape_string($this->con, $email);
         $phone      = mysqli_real_escape_string($this->con, $phone);
         $dob        = mysqli_real_escape_string($this->con, $dob);
 
-        // --- PASSWORD HASHING ---
-        // We hash the password BEFORE putting it into the SQL string
+        
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
         $hashed_password = mysqli_real_escape_string($this->con, $hashed_password);
 
-        // 1. Check if Email already exists
+        
         $verify_query = mysqli_query($this->con, "SELECT email FROM user WHERE email='$email'");
         $verify_query2 = mysqli_query($this->con, "SELECT student_id FROM students WHERE student_id='$student_id'");
         
@@ -32,10 +31,10 @@ class User {
             header("Location: homepage.php");
             exit();
         } else {
-            // 2. Insert into 'user' table (Using the $hashed_password)
+            
             $sql_user = "INSERT INTO `user` (email, Name, password) VALUES ('$email', '$name', '$hashed_password')";
             
-            // 3. Insert into 'students' table
+            
             $sql_student = "INSERT INTO `students` (student_id, full_name, student_email, DOB, contact) 
                             VALUES ('$student_id', '$name', '$email', '$dob', '$phone')";
 

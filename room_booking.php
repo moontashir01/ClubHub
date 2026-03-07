@@ -147,15 +147,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['book_room'])) {
         var defaultImage = 'images/NSUaudi.jpg';
 
         if (this.value !== "") {
-            // formate the immage name. Example: "NAC 201" to "nac201"
+            
             var formattedName = selectedText.replace(/\s+/g, '').toLowerCase();
             
-            // make the Immage path
+            
             var newImagePath = 'images/' + formattedName + '.jpg';
             
             imageDiv.style.backgroundImage = "url('" + newImagePath + "')";
         } else {
-            // Default immage if nothing selected
+            
             imageDiv.style.backgroundImage = "url('" + defaultImage + "')";
         }
     });

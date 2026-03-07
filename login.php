@@ -8,7 +8,7 @@
 
       public function authenticate($email, $password) {
           $email = trim($email);
-          // STEP 1: Added 'Role' to the SELECT statement
+          
           $stmt = $this->db->prepare("SELECT Name, Password, Role FROM user WHERE email = ?");
           $stmt->bind_param("s", $email);
           $stmt->execute();
@@ -18,10 +18,10 @@
               $row = $result->fetch_assoc();
               if (password_verify($password, $row['Password'])) {
                   $_SESSION['Name'] = $row['Name'];
-                  $_SESSION['Email'] = $email; // Fixed: Use the $email variable
-                  $_SESSION['Role'] = $row['Role']; // Store role in session for security
+                  $_SESSION['Email'] = $email; 
+                  $_SESSION['Role'] = $row['Role']; 
 
-                  // STEP 2: Return the Role string instead of just 'true'
+                  
                   return $row['Role']; 
               }
           }
@@ -38,7 +38,7 @@
           $role = $user->authenticate($email, $password); // This now holds the Role string
 
           if ($role) {
-              // STEP 3: Redirect based on the returned $role
+              
               if ($role === 'admin') {
                   header("Location: admin_dashboard.php");
               } 

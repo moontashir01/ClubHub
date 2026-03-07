@@ -36,7 +36,7 @@ $name = $_SESSION['Name'];
 
 
 
-        /* --- NAVBAR --- */
+        
 
         nav { display: flex; justify-content: space-between; padding: 20px 5%; background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent); position: fixed; width: 90%; z-index: 1000; align-items: center; }
 
@@ -100,7 +100,7 @@ $name = $_SESSION['Name'];
 
         .dynamic-btn {
 
-    transition: all 0.3s ease; /* Smooth transition */
+    transition: all 0.3s ease; 
 
 }
 
@@ -108,17 +108,17 @@ $name = $_SESSION['Name'];
 
 .dynamic-btn:hover {
 
-    filter: brightness(1.2); /* Makes the color glow/lighten */
+    filter: brightness(1.2); 
 
-    transform: scale(1.05);  /* Slightly grows the button */
+    transform: scale(1.05);  
 
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3); /* Adds a soft shadow */
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3); 
 
 }
 
 
 
-        /* --- SCROLL HINT --- */
+        
 
         .scroll-hint { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; flex-direction: column; align-items: center; opacity: 0.5; color: white; text-decoration: none; font-size: 10px; }
 
@@ -140,7 +140,7 @@ $name = $_SESSION['Name'];
 
         <div class="logo">Club Hub</div>
 
-        <div>Community | News | <span style="background:var(--pink); padding:6px 15px; border-radius:4px; font-weight:bold; cursor:pointer;">Login</span></div>
+        <div>Community | News | <a href="logout.php" style="background:var(--pink); padding:6px 15px; border-radius:4px; font-weight:bold; cursor:pointer;">Log Out</a></div>
 
     </nav>
 
@@ -194,7 +194,7 @@ $name = $_SESSION['Name'];
 
             <button class="club-card" onclick="location.href='#link4'">
 
-                <img src="images/coding.jpg">
+                <img src="images/blood-donation-5427229_1920.jpg">
 
                 <div class="label">Coding Hub</div>
 
