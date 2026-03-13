@@ -1,8 +1,6 @@
 <?php
 session_start();
 include 'connection.php';
-
-// FIX 1: Ensure Case Sensitivity at the connection level
 mysqli_set_charset($con, "utf8mb4");
 
 if(!isset($_SESSION['Email'])){
@@ -10,38 +8,60 @@ if(!isset($_SESSION['Email'])){
     exit();
 }
 
-$email = $_SESSION['Email'];
-$name = $_SESSION['Name'];
+// --- SUBMISSION HANDLER ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_response'])) {
+    $event_id = (int)$_POST['event_id']; 
+    $user_email = $_SESSION['Email'];
+    $response_json = $_POST['response_json']; 
 
-// 1. FETCH EVENTS FROM DATABASE
-$query = "SELECT * FROM event_configs ORDER BY id DESC LIMIT 5"; 
+    // 1. Check if user already submitted for THIS event
+    $check = $con->prepare("SELECT response_id FROM forms_responses WHERE event_id = ? AND user_email = ?");
+    $check->bind_param("is", $event_id, $user_email);
+    $check->execute();
+    $check->store_result();
+
+    if ($check->num_rows > 0) {
+        echo "already"; // User already exists
+    } else {
+        // 2. If not, insert the response
+        $stmt = $con->prepare("INSERT INTO forms_responses (event_id, user_email, response_data) VALUES (?, ?, ?)");
+        $stmt->bind_param("iss", $event_id, $user_email, $response_json);
+        
+        if ($stmt->execute()) {
+            echo "success";
+        } else {
+            echo "error";
+        }
+        $stmt->close();
+    }
+    $check->close();
+    exit;
+}
+
+$current_time = date('Y-m-d H:i:s');
+$query = "SELECT * FROM event_configs WHERE slider_endtime >= '$current_time' ORDER BY slider_endtime ASC"; 
 $result = mysqli_query($con, $query);
 
 $events_for_js = [];
-
-while($row = mysqli_fetch_assoc($result)) {
-    $config = json_decode($row['config_data'], true);
-    
-    $events_for_js[] = [
-        'club'      => $row['config_name'],
-        'title'     => $row['config_name'],
-        'img'       => 'images/' . ($config['image_path'] ?? 'default.jpg'),
-        'desc'      => $config['description'] ?? 'No description available.',
-        'regLink'   => 'register.php?id=' . $row['id'],
-        'regText'   => 'Register Now',
-        
-        'showReg'   => $config['regToggle'] ?? false, 
-        'regColor'  => $config['regBtnColor'] ?? '#ff4757', 
-        
-        // ADDED THIS LINE ONLY
-        'showTkt'   => $config['tktToggle'] ?? false,
-        
-        'eventLink' => 'view_event.php?id=' . $row['id'],
-        'viewText'  => 'View Details',
-        'titleColor'=> $config['color'] ?? '#ffffff',
-        // FIX 2: Get the Y Position from your builder data
-        'yPos'      => ($config['yPos'] ?? 50) . '%'
-    ];
+if ($result) {
+    while($row = mysqli_fetch_assoc($result)) {
+        $config = json_decode($row['config_data'], true);
+        $events_for_js[] = [
+            'id'         => $row['event_id'], 
+            'club'       => $row['config_name'],
+            'title'      => $row['config_name'],
+            'img'        => 'images/' . ($config['image_path'] ?? 'default.jpg'),
+            'desc'       => $config['description'] ?? 'No description available.',
+            'longDetail' => $config['longDetail'] ?? '',
+            'hSize'      => $config['hSize'] ?? 22,
+            'form'       => $config['fields'] ?? [],
+            'formColors' => $config['formColors'] ?? null,
+            'showReg'    => $config['regToggle'] ?? false, 
+            'showTkt'    => $config['tktToggle'] ?? false,
+            'titleColor' => $config['color'] ?? '#ffffff',
+            'yPos'       => ($config['yPos'] ?? 50) . '%'
+        ];
+    }
 }
 ?>
 
@@ -55,27 +75,39 @@ while($row = mysqli_fetch_assoc($result)) {
         :root { --pink: #ff4d8d; --dark-bg: #0b0b13; --card: #161621; --transition: 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
         html { scroll-snap-type: y mandatory; scroll-behavior: smooth; }
         body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--dark-bg); color: white; overflow-x: hidden; }
-        
-        /* FIX 3: Global Case Sensitivity Protection */
         * { text-transform: none !important; }
+
+        /* Status Toast Styles */
+        #status-toast {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            color: white; padding: 12px 30px; border-radius: 30px;
+            font-weight: bold; z-index: 10000; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
 
         nav { display: flex; justify-content: space-between; padding: 20px 5%; background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent); position: fixed; width: 90%; z-index: 1000; align-items: center; }
         .logo { font-size: 26px; font-weight: 900; letter-spacing: -1px; }
+
         .hero-section { position: relative; height: 100vh; width: 100%; scroll-snap-align: start; overflow: hidden; }
-        
-        /* FIX 4: Remove fixed 20% position so JS can set it dynamically */
         .slide { position: absolute; inset: 0; opacity: 0; transition: var(--transition); background-size: cover; display: flex; align-items: center; padding: 0 5%; }
-        
         .slide.active { opacity: 1; z-index: 1; }
         .slide::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, var(--dark-bg) 5%, transparent 70%), linear-gradient(0deg, var(--dark-bg) 0%, transparent 60%); z-index: 2; }
+        
         .content { position: relative; z-index: 10; max-width: 650px; }
         h1 { font-size: 4rem; margin: 0 0 15px 0; font-weight: 800; }
         .description { font-size: 1.1rem; color: #ccc; line-height: 1.6; margin-bottom: 30px; }
-        .slider-portals { position: absolute; bottom: 80px; left: 5%; z-index: 100; display: flex; gap: 15px; align-items: flex-end; }
-        .mini-card { width: 140px; height: 80px; border-radius: 6px; overflow: hidden; cursor: pointer; position: relative; border: 2px solid transparent; transition: 0.3s; opacity: 0.6; }
-        .mini-card img { width: 100%; height: 100%; object-fit: cover; }
-        .mini-card.active { opacity: 1; border-color: var(--pink); transform: translateY(-10px) scale(1.1); box-shadow: 0 5px 15px rgba(255, 77, 141, 0.4); }
-        .mini-label { position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.7); font-size: 10px; padding: 4px; text-align: center; font-weight: bold; }
+
+        .scroll-hint { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; flex-direction: column; align-items: center; opacity: 0.5; color: white; text-decoration: none; font-size: 10px; }
+        .mouse { width: 20px; height: 32px; border: 2px solid white; border-radius: 10px; position: relative; margin-bottom: 5px; }
+        .mouse::before { content: ''; width: 3px; height: 6px; background: white; position: absolute; top: 6px; left: 50%; transform: translateX(-50%); border-radius: 2px; animation: scroll-anim 1.5s infinite; }
+        @keyframes scroll-anim { 0% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, 10px); } }
+
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(15px); }
+        .modal-content { width: 100%; max-width: 800px; max-height: 85vh; overflow-y: auto; border-radius: 20px; position: relative; padding: 50px; border: 1px solid rgba(255,255,255,0.1); }
+        .close-modal { position: absolute; top: 25px; right: 25px; background: var(--pink); border: none; color: white; padding: 8px 18px; border-radius: 30px; cursor: pointer; font-weight: bold; font-size: 10px; z-index: 10; }
+        
+        .modal-header-centered { text-align: center; width: 100%; margin-bottom: 30px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; }
+        .detail-h { color: var(--pink); font-weight: 800; display: block; margin-top: 25px; margin-bottom: 10px; border-bottom: 1px solid rgba(255, 71, 188, 0.3); padding-bottom: 5px; }
+
         .clubs-section { position: relative; min-height: 100vh; padding: 120px 5% 50px 5%; background: var(--dark-bg); scroll-snap-align: start; }
         .section-title { font-size: 2rem; margin-bottom: 30px; font-weight: 800; border-left: 4px solid var(--pink); padding-left: 15px; }
         .club-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 25px; }
@@ -83,23 +115,44 @@ while($row = mysqli_fetch_assoc($result)) {
         .club-card:hover { transform: translateY(-15px); outline: 1px solid var(--pink); }
         .club-card img { width: 100%; height: 260px; object-fit: cover; display: block; }
         .club-card .label { padding: 15px; font-size: 1rem; font-weight: bold; text-align: center; }
-        
-        /* FIX 5: Button Shape - Added 20px border radius to match builder */
-        .dynamic-btn { transition: all 0.3s ease; border-radius: 20px !important; }
-        
-        .dynamic-btn:hover { filter: brightness(1.2); transform: scale(1.05); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-        .scroll-hint { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; flex-direction: column; align-items: center; opacity: 0.5; color: white; text-decoration: none; font-size: 10px; }
-        .mouse { width: 20px; height: 32px; border: 2px solid white; border-radius: 10px; position: relative; margin-bottom: 5px; }
-        .mouse::before { content: ''; width: 3px; height: 6px; background: white; position: absolute; top: 6px; left: 50%; transform: translateX(-50%); border-radius: 2px; animation: scroll-anim 1.5s infinite; }
-        @keyframes scroll-anim { 0% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, 10px); } }
+
+        .slider-portals { position: absolute; bottom: 80px; left: 5%; z-index: 100; display: flex; gap: 15px; align-items: flex-end; }
+        .mini-card { width: 140px; height: 80px; border-radius: 6px; overflow: hidden; cursor: pointer; position: relative; border: 2px solid transparent; transition: 0.3s; opacity: 0.6; }
+        .mini-card img { width: 100%; height: 100%; object-fit: cover; }
+        .mini-card.active { opacity: 1; border-color: var(--pink); transform: translateY(-10px) scale(1.1); box-shadow: 0 5px 15px rgba(255, 77, 141, 0.4); }
+        .mini-label { position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.7); font-size: 10px; padding: 4px; text-align: center; font-weight: bold; }
     </style>
 </head>
 <body>
 
+    <div id="status-toast"></div>
+
     <nav>
         <div class="logo">Club Hub</div>
-        <div>Community | News | <a href="logout.php" style="background:var(--pink); padding:6px 15px; border-radius:20px; font-weight:bold; cursor:pointer; color:white; text-decoration:none;">Log Out</a></div>
+        <div>Community | News | <a href="logout.php" style="background:var(--pink); padding:6px 15px; border-radius:20px; font-weight:bold; color:white; text-decoration:none;">Log Out</a></div>
     </nav>
+
+    <div class="modal-overlay" id="detailsModal">
+        <div class="modal-content" style="background:#000; box-shadow: 0 0 50px rgba(255,77,141,0.2);">
+            <button class="close-modal" onclick="closeModals()">CLOSE</button>
+            <h2 class="modal-header-centered" style="color:var(--pink); font-size: 2rem;">Event Details</h2>
+            <div id="modal-detail-body" style="line-height:1.8; color:#eee; font-size:1.1rem; white-space: pre-wrap;"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="regModal">
+        <div class="modal-content" id="form-container">
+            <button class="close-modal" onclick="closeModals()">CLOSE</button>
+            <h2 id="form-display-title" class="modal-header-centered" style="font-size: 2rem;"></h2>
+            
+            <input type="hidden" id="current-event-id">
+
+            <form id="submission-form" onsubmit="handleRegistration(event)">
+                <div style="display: flex; flex-wrap: wrap; gap: 20px;" id="dynamic-form-grid"></div>
+                <button type="submit" id="form-submit-btn" style="width:100%; margin-top:30px; padding:18px; border:none; color:white; font-weight:bold; cursor:pointer; border-radius:10px;">SUBMIT REGISTRATION</button>
+            </form>
+        </div>
+    </div>
 
     <div class="hero-section" id="hero-slider">
         <div class="slider-portals" id="mini-portal-container"></div>
@@ -124,43 +177,21 @@ while($row = mysqli_fetch_assoc($result)) {
         const hero = document.getElementById('hero-slider');
         const miniContainer = document.getElementById('mini-portal-container');
 
-        if (contentData.length === 0) {
-            hero.innerHTML += '<div style="display:flex; align-items:center; justify-content:center; height:100vh;"><h1>No events scheduled yet.</h1></div>';
-        }
-
         contentData.forEach((item, i) => {
             const slide = document.createElement('div');
             slide.className = `slide ${i === 0 ? 'active' : ''}`;
             slide.style.backgroundImage = `url('${item.img}')`;
-            
-            // FIX 7: Apply the Y-Position from your Builder settings
             slide.style.backgroundPosition = `center ${item.yPos}`;
             
-            // FIX 8: Button Shape - Applied 20px border-radius here
-            let regBtnHtml = item.showReg ? 
-                `<button class="dynamic-btn" onclick="location.href='${item.regLink}'"
-                        style="background:${item.regColor}; border:none; color:white; padding:12px 30px; border-radius:20px; font-weight:bold; cursor:pointer;">
-                        ${item.regText}
-                </button>` : '';
-
-            // ADDED TICKET BUTTON LOGIC HERE
-            let tktBtnHtml = item.showTkt ? 
-                `<button class="dynamic-btn" onclick="location.href='tickets.php?id=${item.id}'"
-                        style="background:rgba(255,255,255,0.1); border:1px solid white; color:white; padding:12px 30px; border-radius:20px; cursor:pointer; font-weight:bold;">
-                        Get Tickets
-                </button>` : '';
+            let regBtn = item.showReg ? `<button onclick="openRegForm(${i})" style="background:var(--pink); border:none; color:white; padding:14px 35px; border-radius:30px; font-weight:bold; cursor:pointer; margin-right:10px;">Register</button>` : '';
 
             slide.innerHTML = `
                 <div class="content">
                     <h1 style="color:${item.titleColor}">${item.title}</h1>
                     <p class="description">${item.desc}</p>
-                    <div style="display:flex; gap:15px;">
-                        ${regBtnHtml}
-                        ${tktBtnHtml}
-                        <button class="dynamic-btn" onclick="location.href='${item.eventLink}'"
-                                style="background:rgba(255,255,255,0.1); border:1px solid white; color:white; padding:12px 30px; border-radius:20px; cursor:pointer; font-weight:bold;">
-                                ${item.viewText}
-                        </button>
+                    <div style="display:flex;">
+                        ${regBtn}
+                        <button onclick="openDetails(${i})" style="background:rgba(255,255,255,0.1); border:1px solid white; color:white; padding:14px 35px; border-radius:30px; cursor:pointer; font-weight:bold;">View Details</button>
                     </div>
                 </div>`;
             hero.appendChild(slide);
@@ -172,23 +203,98 @@ while($row = mysqli_fetch_assoc($result)) {
             miniContainer.appendChild(mini);
         });
 
+        function openDetails(idx) {
+            const item = contentData[idx];
+            let formatted = item.longDetail.replace(/\[\+H\](.*?)\[H\+\]/g, `<span class="detail-h" style="font-size:${item.hSize/16}rem;">$1</span>`);
+            document.getElementById('modal-detail-body').innerHTML = formatted;
+            document.getElementById('detailsModal').style.display = 'flex';
+        }
+
+        function openRegForm(idx) {
+            const item = contentData[idx];
+            const colors = item.formColors;
+            const container = document.getElementById('form-container');
+            const grid = document.getElementById('dynamic-form-grid');
+            
+            document.getElementById('current-event-id').value = item.id;
+            container.style.backgroundColor = colors.bg;
+            document.getElementById('form-display-title').innerText = colors.formTitleText;
+            document.getElementById('form-display-title').style.color = colors.title;
+            document.getElementById('form-submit-btn').style.backgroundColor = colors.btn;
+
+            grid.innerHTML = '';
+            item.form.forEach((f, fIdx) => {
+                const div = document.createElement('div');
+                div.style.flex = f.isFull ? "0 0 100%" : "0 0 calc(50% - 10px)";
+                
+                let input = f.type === 'dropdown' ? 
+                    `<select data-label="${f.label}" required style="background:${colors.fieldBg}; color:${colors.fieldTxt}; padding:12px; width:100%; border:1px solid rgba(0,0,0,0.1); border-radius:8px;">${f.options.split('\n').map(o => `<option>${o.trim()}</option>`).join('')}</select>` : 
+                    `<input type="text" data-label="${f.label}" required style="background:${colors.fieldBg}; color:${colors.fieldTxt}; padding:12px; width:100%; border:1px solid rgba(0,0,0,0.1); border-radius:8px;">`;
+                
+                div.innerHTML = `<label style="color:${colors.label}; display:block; font-size:11px; font-weight:bold; margin-bottom:5px; text-transform:uppercase;">${f.label}</label>${input}`;
+                grid.appendChild(div);
+            });
+            document.getElementById('regModal').style.display = 'flex';
+        }
+
+        function handleRegistration(e) {
+            e.preventDefault();
+            const eventId = document.getElementById('current-event-id').value;
+            const inputs = document.querySelectorAll('#dynamic-form-grid input, #dynamic-form-grid select');
+            
+            let data = {};
+            inputs.forEach(el => { data[el.getAttribute('data-label')] = el.value; });
+
+            const fd = new FormData();
+            fd.append('submit_response', 'true');
+            fd.append('event_id', eventId);
+            fd.append('response_json', JSON.stringify(data));
+
+            fetch(window.location.href, { method: 'POST', body: fd })
+            .then(r => r.text())
+            .then(res => {
+                const toast = document.getElementById('status-toast');
+                const cleanRes = res.trim();
+
+                if(cleanRes === 'success') {
+                    toast.innerText = "Registration Successful! ✓";
+                    toast.style.background = "#2ecc71";
+                    toast.style.display = "block";
+                    closeModals();
+                    document.getElementById('submission-form').reset();
+                } else if (cleanRes === 'already') {
+                    toast.innerText = "Already Submitted for this event!";
+                    toast.style.background = "#e67e22"; // Orange for warning
+                    toast.style.display = "block";
+                    closeModals();
+                } else {
+                    toast.innerText = "Error submitting registration.";
+                    toast.style.background = "#e74c3c"; // Red for error
+                    toast.style.display = "block";
+                }
+
+                setTimeout(() => { toast.style.display = 'none'; }, 4000);
+            });
+        }
+
+        function closeModals() {
+            document.getElementById('detailsModal').style.display = 'none';
+            document.getElementById('regModal').style.display = 'none';
+        }
+
         let currentIdx = 0;
         const slides = document.querySelectorAll('.slide');
         const minis = document.querySelectorAll('.mini-card');
 
         function jumpToSlide(n) {
-            if(!slides.length) return;
             slides[currentIdx].classList.remove('active');
             minis[currentIdx].classList.remove('active');
             currentIdx = n;
             slides[currentIdx].classList.add('active');
             minis[currentIdx].classList.add('active');
-            clearInterval(autoPlay);
-            autoPlay = setInterval(nextSlide, 6000);
         }
 
-        function nextSlide() { if(slides.length) jumpToSlide((currentIdx + 1) % slides.length); }
-        let autoPlay = setInterval(nextSlide, 4000);
+        let autoPlay = setInterval(() => jumpToSlide((currentIdx + 1) % slides.length), 5000);
     </script>
 </body>
 </html>
