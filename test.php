@@ -59,7 +59,8 @@ if ($result) {
             'showReg'    => $config['regToggle'] ?? false, 
             'showTkt'    => $config['tktToggle'] ?? false,
             'titleColor' => $config['color'] ?? '#ffffff',
-            'yPos'       => ($config['yPos'] ?? 50) . '%'
+            'yPos'       => ($config['yPos'] ?? 50) . '%',
+            'endTime'    => $row['slider_endtime'] // Added for timer
         ];
     }
 }
@@ -93,8 +94,11 @@ if ($result) {
         .slide::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, var(--dark-bg) 5%, transparent 70%), linear-gradient(0deg, var(--dark-bg) 0%, transparent 60%); z-index: 2; }
         
         .content { position: relative; z-index: 10; max-width: 650px; }
-        h1 { font-size: 4rem; margin: 0 0 15px 0; font-weight: 800; }
-        .description { font-size: 1.1rem; color: #ccc; line-height: 1.6; margin-bottom: 30px; }
+        h1 { font-size: 4rem; margin: 0 0 5px 0; font-weight: 800; }
+        .description { font-size: 1.1rem; color: #ccc; line-height: 1.6; margin-bottom: 20px; }
+
+        /* Timer Style */
+        .timer-container { margin-bottom: 20px; font-family: monospace; font-size: 1.2rem; background: rgba(255, 77, 141, 0.15); display: inline-block; padding: 8px 15px; border-radius: 5px; border-left: 3px solid var(--pink); color: var(--pink); font-weight: bold; }
 
         .scroll-hint { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; flex-direction: column; align-items: center; opacity: 0.5; color: white; text-decoration: none; font-size: 10px; }
         .mouse { width: 20px; height: 32px; border: 2px solid white; border-radius: 10px; position: relative; margin-bottom: 5px; }
@@ -188,6 +192,7 @@ if ($result) {
             slide.innerHTML = `
                 <div class="content">
                     <h1 style="color:${item.titleColor}">${item.title}</h1>
+                    <div class="timer-container" id="timer-${i}">Ends in: --h --m --s</div>
                     <p class="description">${item.desc}</p>
                     <div style="display:flex;">
                         ${regBtn}
@@ -202,6 +207,33 @@ if ($result) {
             mini.onclick = () => jumpToSlide(i);
             miniContainer.appendChild(mini);
         });
+
+        // COUNTDOWN TIMER LOGIC
+        function updateTimers() {
+            contentData.forEach((item, i) => {
+                const target = new Date(item.endTime).getTime();
+                const now = new Date().getTime();
+                const diff = target - now;
+
+                const timerEl = document.getElementById(`timer-${i}`);
+                if (diff <= 0) {
+                    timerEl.innerText = "Event Ended";
+                    return;
+                }
+
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const secs = Math.floor((diff % (1000 * 60)) / 1000);
+
+                let display = `Ends in: `;
+                if(days > 0) display += `${days}d `;
+                display += `${hours}h ${mins}m ${secs}s`;
+                timerEl.innerText = display;
+            });
+        }
+        setInterval(updateTimers, 1000);
+        updateTimers();
 
         function openDetails(idx) {
             const item = contentData[idx];
@@ -264,12 +296,12 @@ if ($result) {
                     document.getElementById('submission-form').reset();
                 } else if (cleanRes === 'already') {
                     toast.innerText = "Already Submitted for this event!";
-                    toast.style.background = "#e67e22"; // Orange for warning
+                    toast.style.background = "#e67e22"; 
                     toast.style.display = "block";
                     closeModals();
                 } else {
                     toast.innerText = "Error submitting registration.";
-                    toast.style.background = "#e74c3c"; // Red for error
+                    toast.style.background = "#e74c3c"; 
                     toast.style.display = "block";
                 }
 
