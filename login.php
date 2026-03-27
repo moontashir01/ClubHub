@@ -32,7 +32,7 @@
                   if ($row['portal'] === 'student') {
                       // Note: The club_members table still uses the column 'Role' as per your previous schema
                       $eb_stmt = $this->db->prepare("
-                          SELECT cm.Role 
+                          SELECT cm.Role,cm.club_id 
                           FROM students s
                           INNER JOIN club_members cm ON s.student_id = cm.student_id 
                           WHERE s.student_email = ? AND cm.active = 1
@@ -44,7 +44,10 @@
                       while ($member_row = $eb_result->fetch_assoc()) {
                           // Check if the Role in club_members starts with 'EB'
                           if (strtoupper(substr($member_row['Role'], 0, 2)) === 'EB') {
+                            $_SESSION['club_id'] = $member_row['club_id']; 
                               return 'Executive Member'; 
+
+
                           }
                       }
                       

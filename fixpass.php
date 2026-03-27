@@ -1,9 +1,9 @@
 <?php
 include 'connection.php';
 
-$plain_password = 'password123'; 
+$plain_password = '123'; 
 $hashed_password = password_hash($plain_password, PASSWORD_DEFAULT);
-$email = 'testuser@example.com';
+$email = 'fahim.chowdhury@northsouth.edu';
 
 $sql = "UPDATE user SET Password = ? WHERE email = ?";
 $stmt = $con->prepare($sql);

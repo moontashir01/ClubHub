@@ -2,11 +2,11 @@
 session_start();
 include 'connection.php';
 
-if(!isset($_SESSION['Club_id'])){
-    $_SESSION['Club_id'] = '1'; 
+if(!isset($_SESSION['club_id'])){
+    header("Location:homepage.php");
 }
 
-$club_id = $_SESSION['Club_id'];
+$club_id = $_SESSION['club_id'];
 $today = date('Y-m-d');
 
 // --- DATE LOGIC ---
@@ -90,26 +90,39 @@ while($row = $res->fetch_assoc()){
         .date-input { background: #000; border: 1px solid #444; color: #fff; padding: 8px 12px; border-radius: 6px; outline: none; cursor: pointer; }
         .date-input::-webkit-calendar-picker-indicator { filter: invert(47%) sepia(88%) saturate(2345%) hue-rotate(313deg); }
 
-        /* --- 3D BUTTONS --- */
+        /* --- 3D BUTTONS CONTAINER --- */
         .hotspot-container { width: 220px; height: 384px; perspective: 800px; }
+        
         .tall-button {
             width: 100%; height: 100%;
             background: rgba(0, 255, 204, 0.1); border: 2px solid #00ffcc;
             cursor: pointer; display: flex; flex-direction: column; justify-content: center; align-items: center;
-            color: white; font-weight: bold; transition: all 0.3s ease;
+            color: white; font-weight: bold; transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
             backface-visibility: hidden; text-align: center; border-radius: 8px; padding: 10px; box-sizing: border-box;
         }
         .tall-button span { font-size: 11px; font-weight: normal; margin-top: 5px; display: block; opacity: 0.9; }
         .club-label { color: #ff8800; font-style: italic; font-size: 12px !important; margin-top: 8px !important; }
 
-        .left-rotation { transform: rotateY(0deg); }
-        .right-rotation { transform: rotateY(-45deg); }
+        /* --- SPECIFIC BUTTON ANGLES (Change these numbers to tilt them differently) --- */
+        .angle-1 { transform: rotateY(0deg); }
+        .angle-2 { transform: rotateY(-25deg); }
+        .angle-3 { transform: rotateY(0deg); }
+        .angle-4 { transform: rotateY(15deg); }
+        .angle-5 { transform: rotateY(-15deg); }
+        .angle-6 { transform: rotateY(-5deg); }
+
+        /* --- HOVER EFFECT: BECOME STRAIGHT AND POP OUT --- */
+        /* Placed after the angle classes so it overrides them on hover */
+        .tall-button:hover:not(.is-confirmed) { 
+            transform: rotateY(0deg) scale(1.05) translateZ(30px); 
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.4); 
+        }
 
         /* --- STATUS COLORS (FIXED TEXT COLORS) --- */
         .is-my-pending { 
             background: rgba(255, 255, 0, 0.4) !important; 
             border-color: #ffff00 !important; 
-            color: #fff !important; /* Changed from black to white */
+            color: #fff !important; 
         }
         .is-others-pending { 
             background: rgba(255, 136, 0, 0.3) !important; 
@@ -121,11 +134,6 @@ while($row = $res->fetch_assoc()){
             border-color: #ff0000 !important; 
             color: #fff !important;
             cursor: not-allowed; 
-        }
-
-        .tall-button:hover:not(.is-confirmed) { 
-            transform: scale(1.05) translateZ(30px); 
-            box-shadow: 0 0 20px rgba(0, 255, 204, 0.4); 
         }
     </style>
 </head>
@@ -152,16 +160,22 @@ while($row = $res->fetch_assoc()){
         "autoLoad": true, "showControls": false,
         "hfov": 110, "minPitch": 0, "maxPitch": 0,
         "hotSpots": [
-            { "pitch": 0, "yaw": 90, "cssClass": "hotspot-container", "createTooltipFunc": hotspotWrapper, "createTooltipArgs": { "label": "Slot 1", "id": 1, "className": "left-rotation" } },
-            { "pitch": 0, "yaw": 12, "cssClass": "hotspot-container", "createTooltipFunc": hotspotWrapper, "createTooltipArgs": { "label": "Slot 2", "id": 2, "className": "right-rotation" } }
+            { "pitch": 0, "yaw": 50, "cssClass": "hotspot-container", "createTooltipFunc": hotspotWrapper, "createTooltipArgs": { "label": "Slot 1", "id": 1, "className": "angle-1" } },
+            { "pitch": 0, "yaw": 12, "cssClass": "hotspot-container", "createTooltipFunc": hotspotWrapper, "createTooltipArgs": { "label": "Slot 2", "id": 2, "className": "angle-2" } },
+            { "pitch": 0, "yaw": -130, "cssClass": "hotspot-container", "createTooltipFunc": hotspotWrapper, "createTooltipArgs": { "label": "Slot 3", "id": 3, "className": "angle-3" } },
+            { "pitch": 0, "yaw": 100, "cssClass": "hotspot-container", "createTooltipFunc": hotspotWrapper, "createTooltipArgs": { "label": "Slot 4", "id": 4, "className": "angle-4" } },
+            { "pitch": 0, "yaw": -170, "cssClass": "hotspot-container", "createTooltipFunc": hotspotWrapper, "createTooltipArgs": { "label": "Slot 5", "id": 5, "className": "angle-5" } },
+            { "pitch": 0, "yaw": -90, "cssClass": "hotspot-container", "createTooltipFunc": hotspotWrapper, "createTooltipArgs": { "label": "Slot 6", "id": 6, "className": "angle-6" } }
         ]
     });
 
     function hotspotWrapper(hotSpotDiv, args) {
         hotSpotDiv.classList.add('hotspot-container');
+        
         const btn = document.createElement('div');
         btn.classList.add('tall-button');
-        btn.classList.add(args.className);
+        // Add the specific angle class directly to the button
+        btn.classList.add(args.className); 
         btn.innerHTML = "<strong>" + args.label + "</strong>";
 
         const sid = args.id;
