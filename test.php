@@ -3,39 +3,164 @@ session_start();
 include 'connection.php';
 mysqli_set_charset($con, "utf8mb4");
 
+// Add PHPMailer namespaces at the top
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+use PHPMailer\PHPMailer\SMTP;
+
 if(!isset($_SESSION['Email'])){
     header("Location:homepage.php");
     exit();
 }
 
-// --- SUBMISSION HANDLER ---
+// --- UNIFIED SUBMISSION & MAILING HANDLER ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_response'])) {
+    
+    // Turn on error reporting temporarily to catch hidden PHP crashes
+    ini_set('display_errors', 1);
+    ini_set('display_startup_errors', 1);
+    error_reporting(E_ALL);
+
     $event_id = (int)$_POST['event_id']; 
     $user_email = $_SESSION['Email'];
-    $response_json = $_POST['response_json']; 
+    $form_type = $_POST['form_type']; // 'register' or 'ticket'
+    
+    // Inject the form_type into the JSON so you can identify it later
+    $response_array = json_decode($_POST['response_json'], true);
+    $response_array['_form_type'] = $form_type; 
+    $final_json = json_encode($response_array); 
 
-    // 1. Check if user already submitted for THIS event
-    $check = $con->prepare("SELECT response_id FROM forms_responses WHERE event_id = ? AND user_email = ?");
+    // 1. Check if user already submitted THIS SPECIFIC form type for this event
+    $check = $con->prepare("SELECT response_data FROM forms_responses WHERE event_id = ? AND user_email = ?");
     $check->bind_param("is", $event_id, $user_email);
     $check->execute();
-    $check->store_result();
+    $res = $check->get_result();
+    
+    $already_submitted = false;
+    while($row = $res->fetch_assoc()) {
+        $data = json_decode($row['response_data'], true);
+        if(isset($data['_form_type']) && $data['_form_type'] === $form_type) {
+            $already_submitted = true;
+            break;
+        }
+    }
+    $check->close();
 
-    if ($check->num_rows > 0) {
-        echo "already"; // User already exists
+    if ($already_submitted) {
+        echo "already"; 
+        exit;
+    } 
+
+    // 2. Fetch Event Config (needed for Club Name, House Full, and Ticket Image)
+    $cfg_query = mysqli_query($con, "SELECT config_name, config_data FROM event_configs WHERE event_id = $event_id");
+    $cfg_row = mysqli_fetch_assoc($cfg_query);
+    $cfg_data = json_decode($cfg_row['config_data'], true);
+    $club_name = $cfg_row['config_name'] ?? 'The Club';
+
+    // 3. House Full check for tickets
+    if ($form_type === 'ticket') {
+        $total_qty = (int)($cfg_data['ticketData']['qty'] ?? 0);
+        $sold_query = mysqli_query($con, "SELECT COUNT(*) as c FROM forms_responses WHERE event_id = $event_id AND response_data LIKE '%\"_form_type\":\"ticket\"%'");
+        $sold_row = mysqli_fetch_assoc($sold_query);
+        $sold = (int)$sold_row['c'];
+        
+        if ($sold >= $total_qty) {
+            echo "full"; 
+            exit;
+        }
+
+        // --- NEW LOGIC: SEND EMAIL FIRST ---
+        if (!file_exists(__DIR__ . '/PHPMailer/PHPMailer.php')) {
+            echo "MISSING_PHPMAILER_FOLDER: I cannot find the 'PHPMailer' folder.";
+            exit;
+        }
+
+        require __DIR__ . '/PHPMailer/Exception.php';
+        require __DIR__ . '/PHPMailer/PHPMailer.php';
+        require __DIR__ . '/PHPMailer/SMTP.php';
+
+        $mail = new PHPMailer(true);
+        try {
+            $mail->isSMTP();
+            $mail->Host       = 'smtp.gmail.com';
+            $mail->SMTPAuth   = true;
+            $mail->Username   = 'sagorsrijoy123@gmail.com'; 
+            $mail->Password   = 'wfuy ibks mwjq muge'; 
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+            $mail->Port       = 587;
+
+            $mail->setFrom('sagorsrijoy123@gmail.com', $club_name);
+            $mail->addAddress($user_email);
+
+            // Try to extract the user's name from the submitted form fields safely
+            $attendee_name = "";
+            foreach ($response_array as $key => $value) {
+                if (stripos($key, 'name') !== false) {
+                    $attendee_name = htmlspecialchars($value);
+                    break;
+                }
+            }
+
+            // Find and attach the specific ticket image safely
+            $ticket_image_name = $cfg_data['ticket_image_path'] ?? '';
+            if (!empty($ticket_image_name)) {
+                $imagePath = __DIR__ . '/images/' . $ticket_image_name;
+                if (file_exists($imagePath)) {
+                    $mail->addAttachment($imagePath, 'Event_Ticket.jpg');
+                }
+            }
+
+            $mail->isHTML(true);
+            $mail->Subject = "Your Ticket for " . $club_name;
+            $mail->Body    = "
+                <div style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
+                    <p>Hello $attendee_name,</p>
+                    <p>Your ticket is attached below.Please show the ticket at entrance</p>
+                    <br>
+                    <p>Thanks,</p>
+                </div>";
+
+            // If this fails, it jumps straight to catch() and DOES NOT save to database
+            $mail->send(); 
+
+            // --- IF EMAIL SUCCESSFUL, INSERT INTO DATABASE ---
+            $stmt = $con->prepare("INSERT INTO forms_responses (event_id, user_email, response_data) VALUES (?, ?, ?)");
+            $stmt->bind_param("iss", $event_id, $user_email, $final_json);
+            if ($stmt->execute()) {
+                echo "success";
+            } else {
+                echo "DB_INSERT_ERROR: " . mysqli_error($con);
+            }
+            $stmt->close();
+
+        } catch (Exception $e) {
+            echo "MAIL_SMTP_ERROR: " . $e->getMessage(); 
+            exit; // Stop entirely so we don't save to database
+        }
+
     } else {
-        // 2. If not, insert the response
+        // --- REGULAR REGISTRATION (No Email Required) ---
         $stmt = $con->prepare("INSERT INTO forms_responses (event_id, user_email, response_data) VALUES (?, ?, ?)");
-        $stmt->bind_param("iss", $event_id, $user_email, $response_json);
+        $stmt->bind_param("iss", $event_id, $user_email, $final_json);
         
         if ($stmt->execute()) {
             echo "success";
         } else {
-            echo "error";
+            echo "DB_INSERT_ERROR: " . mysqli_error($con);
         }
         $stmt->close();
     }
-    $check->close();
+    
     exit;
+}
+
+// Fetch ticket sales counts to calculate remaining tickets dynamically
+$sales_query = mysqli_query($con, "SELECT event_id, COUNT(*) as sold FROM forms_responses WHERE response_data LIKE '%\"_form_type\":\"ticket\"%' GROUP BY event_id");
+$tickets_sold = [];
+if ($sales_query) {
+    while ($s_row = mysqli_fetch_assoc($sales_query)) {
+        $tickets_sold[$s_row['event_id']] = (int)$s_row['sold'];
+    }
 }
 
 $current_time = date('Y-m-d H:i:s');
@@ -46,6 +171,12 @@ $events_for_js = [];
 if ($result) {
     while($row = mysqli_fetch_assoc($result)) {
         $config = json_decode($row['config_data'], true);
+        
+        // Calculate remaining tickets
+        $total_tickets = isset($config['ticketData']['qty']) ? (int)$config['ticketData']['qty'] : 0;
+        $sold = $tickets_sold[$row['event_id']] ?? 0;
+        $remaining = max(0, $total_tickets - $sold);
+
         $events_for_js[] = [
             'id'         => $row['event_id'], 
             'club'       => $row['config_name'],
@@ -58,9 +189,12 @@ if ($result) {
             'formColors' => $config['formColors'] ?? null,
             'showReg'    => $config['regToggle'] ?? false, 
             'showTkt'    => $config['tktToggle'] ?? false,
+            'ticketData' => $config['ticketData'] ?? null,
+            'ticketImg'  => isset($config['ticket_image_path']) && $config['ticket_image_path'] !== "" ? 'images/' . $config['ticket_image_path'] : null,
+            'remainingTickets' => $remaining,
             'titleColor' => $config['color'] ?? '#ffffff',
             'yPos'       => ($config['yPos'] ?? 50) . '%',
-            'endTime'    => $row['slider_endtime'] // Added for timer
+            'endTime'    => $row['slider_endtime'] 
         ];
     }
 }
@@ -97,7 +231,6 @@ if ($result) {
         h1 { font-size: 4rem; margin: 0 0 5px 0; font-weight: 800; }
         .description { font-size: 1.1rem; color: #ccc; line-height: 1.6; margin-bottom: 20px; }
 
-        /* Timer Style */
         .timer-container { margin-bottom: 20px; font-family: monospace; font-size: 1.2rem; background: rgba(255, 77, 141, 0.15); display: inline-block; padding: 8px 15px; border-radius: 5px; border-left: 3px solid var(--pink); color: var(--pink); font-weight: bold; }
 
         .scroll-hint { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; flex-direction: column; align-items: center; opacity: 0.5; color: white; text-decoration: none; font-size: 10px; }
@@ -125,6 +258,31 @@ if ($result) {
         .mini-card img { width: 100%; height: 100%; object-fit: cover; }
         .mini-card.active { opacity: 1; border-color: var(--pink); transform: translateY(-10px) scale(1.1); box-shadow: 0 5px 15px rgba(255, 77, 141, 0.4); }
         .mini-label { position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.7); font-size: 10px; padding: 4px; text-align: center; font-weight: bold; }
+
+        /* BUTTON HOVER "POP" EFFECTS */
+        button { 
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important; 
+            will-change: transform, box-shadow;
+        }
+        button:not([disabled]):hover { 
+            transform: translateY(-4px) scale(1.03) !important; 
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important; 
+            filter: brightness(1.15) !important;
+        }
+        button:not([disabled]):active { 
+            transform: translateY(1px) scale(0.98) !important; 
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important; 
+        }
+        
+        nav a[href="logout.php"] {
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+            display: inline-block;
+        }
+        nav a[href="logout.php"]:hover {
+            transform: translateY(-3px) scale(1.05) !important;
+            box-shadow: 0 8px 20px rgba(255, 77, 141, 0.5) !important;
+            filter: brightness(1.15) !important;
+        }
     </style>
 </head>
 <body>
@@ -151,9 +309,27 @@ if ($result) {
             
             <input type="hidden" id="current-event-id">
 
-            <form id="submission-form" onsubmit="handleRegistration(event)">
+            <form id="submission-form" onsubmit="handleRegistration(event, 'register')">
                 <div style="display: flex; flex-wrap: wrap; gap: 20px;" id="dynamic-form-grid"></div>
                 <button type="submit" id="form-submit-btn" style="width:100%; margin-top:30px; padding:18px; border:none; color:white; font-weight:bold; cursor:pointer; border-radius:10px;">SUBMIT REGISTRATION</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="tktModal">
+        <div class="modal-content" id="tkt-container">
+            <button class="close-modal" onclick="closeModals()">CLOSE</button>
+            
+            <div id="tkt-img-preview" style="width:100%; height:150px; background-size:cover; background-position:center; border-radius:10px; margin-bottom:20px; display:none;"></div>
+            
+            <h2 id="tkt-display-title" class="modal-header-centered" style="font-size: 2rem; margin-bottom: 5px;"></h2>
+            <p id="tkt-remaining-display" style="text-align:center; font-weight:bold; font-size:14px; margin-top:0; margin-bottom:30px;"></p>
+            
+            <input type="hidden" id="current-tkt-event-id">
+
+            <form id="tkt-submission-form" onsubmit="handleRegistration(event, 'ticket')">
+                <div style="display: flex; flex-wrap: wrap; gap: 20px;" id="dynamic-tkt-grid"></div>
+                <button type="submit" id="tkt-submit-btn" style="width:100%; margin-top:30px; padding:18px; border:none; color:white; font-weight:bold; cursor:pointer; border-radius:10px;">PURCHASE TICKET</button>
             </form>
         </div>
     </div>
@@ -189,6 +365,15 @@ if ($result) {
             
             let regBtn = item.showReg ? `<button onclick="openRegForm(${i})" style="background:var(--pink); border:none; color:white; padding:14px 35px; border-radius:30px; font-weight:bold; cursor:pointer; margin-right:10px;">Register</button>` : '';
 
+            let tktBtn = '';
+            if (item.showTkt) {
+                if (item.remainingTickets <= 0) {
+                    tktBtn = `<button disabled style="background:#555; border:none; color:#ccc; padding:14px 35px; border-radius:30px; font-weight:bold; margin-right:10px; cursor:not-allowed;">House Full</button>`;
+                } else {
+                    tktBtn = `<button onclick="openTicketForm(${i})" style="background:transparent; border:1px solid white; color:white; padding:14px 35px; border-radius:30px; font-weight:bold; cursor:pointer; margin-right:10px;">Get Tickets</button>`;
+                }
+            }
+
             slide.innerHTML = `
                 <div class="content">
                     <h1 style="color:${item.titleColor}">${item.title}</h1>
@@ -196,6 +381,7 @@ if ($result) {
                     <p class="description">${item.desc}</p>
                     <div style="display:flex;">
                         ${regBtn}
+                        ${tktBtn}
                         <button onclick="openDetails(${i})" style="background:rgba(255,255,255,0.1); border:1px solid white; color:white; padding:14px 35px; border-radius:30px; cursor:pointer; font-weight:bold;">View Details</button>
                     </div>
                 </div>`;
@@ -208,7 +394,6 @@ if ($result) {
             miniContainer.appendChild(mini);
         });
 
-        // COUNTDOWN TIMER LOGIC
         function updateTimers() {
             contentData.forEach((item, i) => {
                 const target = new Date(item.endTime).getTime();
@@ -269,10 +454,64 @@ if ($result) {
             document.getElementById('regModal').style.display = 'flex';
         }
 
-        function handleRegistration(e) {
+        function openTicketForm(idx) {
+            const item = contentData[idx];
+            const colors = item.ticketData.colors;
+            const container = document.getElementById('tkt-container');
+            const grid = document.getElementById('dynamic-tkt-grid');
+            const imgPreview = document.getElementById('tkt-img-preview');
+            
+            document.getElementById('current-tkt-event-id').value = item.id;
+            container.style.backgroundColor = colors.bg;
+            
+            if (item.ticketImg) {
+                imgPreview.style.backgroundImage = `url('${item.ticketImg}')`;
+                imgPreview.style.display = 'block';
+            } else {
+                imgPreview.style.display = 'none';
+            }
+
+            document.getElementById('tkt-display-title').innerText = colors.formTitleText;
+            document.getElementById('tkt-display-title').style.color = colors.title;
+            
+            const remainingLabel = document.getElementById('tkt-remaining-display');
+            remainingLabel.innerText = `${item.remainingTickets} Tickets Available`;
+            remainingLabel.style.color = colors.label;
+
+            document.getElementById('tkt-submit-btn').style.backgroundColor = colors.btn;
+
+            grid.innerHTML = '';
+            item.ticketData.fields.forEach((f, fIdx) => {
+                const div = document.createElement('div');
+                div.style.flex = f.isFull ? "0 0 100%" : "0 0 calc(50% - 10px)";
+                
+                let input = f.type === 'dropdown' ? 
+                    `<select data-label="${f.label}" required style="background:${colors.fieldBg}; color:${colors.fieldTxt}; padding:12px; width:100%; border:1px solid rgba(0,0,0,0.1); border-radius:8px;">${f.options.split('\n').map(o => `<option>${o.trim()}</option>`).join('')}</select>` : 
+                    `<input type="text" data-label="${f.label}" required style="background:${colors.fieldBg}; color:${colors.fieldTxt}; padding:12px; width:100%; border:1px solid rgba(0,0,0,0.1); border-radius:8px;">`;
+                
+                div.innerHTML = `<label style="color:${colors.label}; display:block; font-size:11px; font-weight:bold; margin-bottom:5px; text-transform:uppercase;">${f.label}</label>${input}`;
+                grid.appendChild(div);
+            });
+            document.getElementById('tktModal').style.display = 'flex';
+        }
+
+        function handleRegistration(e, formType) {
             e.preventDefault();
-            const eventId = document.getElementById('current-event-id').value;
-            const inputs = document.querySelectorAll('#dynamic-form-grid input, #dynamic-form-grid select');
+            
+            const eventId = formType === 'ticket' ? document.getElementById('current-tkt-event-id').value : document.getElementById('current-event-id').value;
+            const gridId = formType === 'ticket' ? '#dynamic-tkt-grid' : '#dynamic-form-grid';
+            
+            // Setup the "Sending..." visual effect
+            const submitBtnId = formType === 'ticket' ? 'tkt-submit-btn' : 'form-submit-btn';
+            const submitBtn = document.getElementById(submitBtnId);
+            const originalBtnText = submitBtn.innerText;
+            
+            submitBtn.innerText = formType === 'ticket' ? "Processing & Emailing..." : "Sending...";
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.7';
+            submitBtn.style.cursor = 'wait';
+            
+            const inputs = document.querySelectorAll(gridId + ' input, ' + gridId + ' select');
             
             let data = {};
             inputs.forEach(el => { data[el.getAttribute('data-label')] = el.value; });
@@ -280,31 +519,69 @@ if ($result) {
             const fd = new FormData();
             fd.append('submit_response', 'true');
             fd.append('event_id', eventId);
+            fd.append('form_type', formType); 
             fd.append('response_json', JSON.stringify(data));
 
+            // Send to PHP Server
             fetch(window.location.href, { method: 'POST', body: fd })
             .then(r => r.text())
             .then(res => {
                 const toast = document.getElementById('status-toast');
                 const cleanRes = res.trim();
 
+                // ----------------------------------------------------
+                // DIAGNOSTIC POP-UP: Shows you exact PHP errors
+                // ----------------------------------------------------
+                if (cleanRes !== 'success' && cleanRes !== 'already' && cleanRes !== 'full') {
+                    alert("⚠️ PHP SERVER ERROR:\n\n" + cleanRes);
+                }
+
+                // Restore Button Visually
+                submitBtn.innerText = originalBtnText;
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = '1';
+                submitBtn.style.cursor = 'pointer';
+
                 if(cleanRes === 'success') {
-                    toast.innerText = "Registration Successful! ✓";
+                    toast.innerText = formType === 'ticket' ? "Ticket Purchased & Email Sent! ✓" : "Registration Successful! ✓";
                     toast.style.background = "#2ecc71";
                     toast.style.display = "block";
                     closeModals();
                     document.getElementById('submission-form').reset();
+                    document.getElementById('tkt-submission-form').reset();
+                    setTimeout(() => window.location.reload(), 2000); 
+                    
                 } else if (cleanRes === 'already') {
-                    toast.innerText = "Already Submitted for this event!";
+                    toast.innerText = formType === 'ticket' ? "You already secured a ticket!" : "Already Submitted for this event!";
                     toast.style.background = "#e67e22"; 
                     toast.style.display = "block";
                     closeModals();
+                } else if (cleanRes === 'full') {
+                    toast.innerText = "House Full! No tickets remaining.";
+                    toast.style.background = "#e74c3c"; 
+                    toast.style.display = "block";
+                    closeModals();
                 } else {
-                    toast.innerText = "Error submitting registration.";
+                    toast.innerText = "Error processing request. Check the alert box.";
                     toast.style.background = "#e74c3c"; 
                     toast.style.display = "block";
                 }
 
+                if (cleanRes !== 'success') {
+                    setTimeout(() => { toast.style.display = 'none'; }, 6000);
+                }
+            })
+            .catch(err => {
+                submitBtn.innerText = originalBtnText;
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = '1';
+                submitBtn.style.cursor = 'pointer';
+                
+                alert("⚠️ JAVASCRIPT NETWORK ERROR:\n\n" + err);
+                const toast = document.getElementById('status-toast');
+                toast.innerText = "Network Error! Please try again.";
+                toast.style.background = "#e74c3c"; 
+                toast.style.display = "block";
                 setTimeout(() => { toast.style.display = 'none'; }, 4000);
             });
         }
@@ -312,6 +589,7 @@ if ($result) {
         function closeModals() {
             document.getElementById('detailsModal').style.display = 'none';
             document.getElementById('regModal').style.display = 'none';
+            document.getElementById('tktModal').style.display = 'none';
         }
 
         let currentIdx = 0;

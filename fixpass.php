@@ -3,7 +3,7 @@ include 'connection.php';
 
 $plain_password = '123'; 
 $hashed_password = password_hash($plain_password, PASSWORD_DEFAULT);
-$email = 'fahim.chowdhury@northsouth.edu';
+$email = 'ridwanul.hoque01@northsouth.edu';
 
 $sql = "UPDATE user SET Password = ? WHERE email = ?";
 $stmt = $con->prepare($sql);

@@ -36,8 +36,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_trigger'])) {
             $image_name = $file_name;
         }
     }
-
     $data_array['image_path'] = $image_name;
+
+    // TICKET IMAGE UPLOAD HANDLING
+    $ticket_image_name = "";
+    if (isset($_FILES['ticket_image_file']) && $_FILES['ticket_image_file']['error'] === 0) {
+        $target_dir = "images/";
+        if (!file_exists($target_dir)) { mkdir($target_dir, 0777, true); }
+        $tkt_file_name = time() . "_tkt_" . basename($_FILES["ticket_image_file"]["name"]);
+        if (move_uploaded_file($_FILES["ticket_image_file"]["tmp_name"], $target_dir . $tkt_file_name)) {
+            $ticket_image_name = $tkt_file_name;
+        }
+    }
+    if ($ticket_image_name !== "") {
+        $data_array['ticket_image_path'] = $ticket_image_name;
+    }
+
     $final_json = mysqli_real_escape_string($con, json_encode($data_array));
     
     $sql = "INSERT INTO event_configs (event_id, config_name, config_data, slider_endtime) 
@@ -71,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_trigger'])) {
         #bg-container { position: absolute; inset: 0; background-color: #111; background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.7)), var(--bg-img); background-size: cover; background-position: center var(--pos-y); filter: blur(var(--blur)); transition: filter 0.5s ease; z-index: 1; }
         .pane-overlay { position: absolute; inset: 0; display: flex; z-index: 2; }
 
-        #form-preview-view, #details-view { display: none; align-items: center; justify-content: center; padding: 40px; background: rgba(0,0,0,0.7); }
+        #form-preview-view, #ticket-preview-view, #details-view { display: none; align-items: center; justify-content: center; padding: 40px; background: rgba(0,0,0,0.7); }
         
         .preview-box-dark { background: #000; padding: 50px; border-radius: 15px; width: 100%; max-width: 800px; border: 2px solid #ff47bc; box-shadow: 0 0 25px rgba(255, 71, 188, 0.5); max-height: 90vh; overflow-y: auto; position: relative; color: white; }
         .preview-box-dark h2.main-head { text-align: center; margin-bottom: 30px; font-size: 32px; color: #ff47bc; text-transform: uppercase; letter-spacing: 2px; }
@@ -101,9 +115,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_trigger'])) {
         label { display: block; font-size: 11px; font-weight: bold; color: #777; margin-bottom: 5px; text-transform: uppercase; }
         input, textarea, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; outline: none; }
         
-        #drop-zone { border: 2px dashed #ccc; padding: 20px; text-align: center; border-radius: 8px; cursor: pointer; font-size: 13px; color: #888; }
+        #drop-zone, #tkt-drop-zone { border: 2px dashed #ccc; padding: 20px; text-align: center; border-radius: 8px; cursor: pointer; font-size: 13px; color: #888; }
         #toggle-btn { position: fixed; top: 20px; left: 20px; background: #000; color: #fff; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; z-index: 100; font-weight: bold; font-size: 12px; }
-        #edit-table-btn { margin-top: 10px; background: #eee; border: 1px solid #ccc; padding: 8px; width: 100%; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold; display: none; }
+        #edit-table-btn, #edit-ticket-btn { margin-top: 10px; background: #eee; border: 1px solid #ccc; padding: 8px; width: 100%; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold; display: none; }
         
         .field-block { border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px; position: relative; }
         .remove-txt { color: #ff4757; font-size: 10px; cursor: pointer; float: right; text-transform: uppercase; font-weight: bold; }
@@ -139,9 +153,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_trigger'])) {
         <div class="group">
             <label>Buttons</label>
             <div style="font-size: 13px;">
-                <label class="check-item"><input type="checkbox" id="regToggle" onchange="updateUI()"> Register Button</label>
+                <label class="check-item"><input type="checkbox" id="regToggle" onchange="if(this.checked){document.getElementById('tktToggle').checked = false;} updateUI()"> Register Button</label>
                 <button id="edit-table-btn" onclick="toggleEditPlace()">EDIT REGISTRATION FORM</button>
-                <label class="check-item" style="margin-top:5px;"><input type="checkbox" id="tktToggle" onchange="updateUI()"> Ticket Button</label>
+                <label class="check-item" style="margin-top:5px;"><input type="checkbox" id="tktToggle" onchange="if(this.checked){document.getElementById('regToggle').checked = false;} updateUI()"> Ticket Button</label>
+                <button id="edit-ticket-btn" onclick="toggleTicketEditPlace()">EDIT TICKET SETTINGS</button>
             </div>
         </div>
         
@@ -177,6 +192,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_trigger'])) {
         </div>
         <button class="action-btn" style="width:100%; background:#ff4757; color:#fff; font-size:10px; margin-top:10px;" onclick="toggleEditPlace()">Save & Back</button>
     </div>
+
+    <div id="ticket-settings" style="display:none;">
+        <div class="group"><label>Ticket Image</label><div id="tkt-drop-zone" onclick="document.getElementById('tktFileIn').click()">Drop or Click Image</div><input type="file" id="tktFileIn" hidden accept="image/*"></div>
+        <div class="group"><label>Total Tickets Available</label><input type="number" id="tktQtyIn" value="100" min="1" oninput="renderTicketForm()"></div>
+        <div class="color-row group">
+            <div><label>Box BG</label><input type="color" id="tktBgIn" value="#ffffff" oninput="renderTicketForm()"></div>
+            <div><label>Title Col</label><input type="color" id="tktTitleColIn" value="#222222" oninput="renderTicketForm()"></div>
+            <div><label>Label Col</label><input type="color" id="tktLabelColIn" value="#444444" oninput="renderTicketForm()"></div>
+        </div>
+        <div class="color-row group">
+            <div><label>Field BG</label><input type="color" id="tktFieldBgIn" value="#fdfdfd" oninput="renderTicketForm()"></div>
+            <div><label>Field Txt</label><input type="color" id="tktFieldTextIn" value="#444444" oninput="renderTicketForm()"></div>
+            <div><label>Submit Btn</label><input type="color" id="tktBtnIn" value="#00a8ff" oninput="renderTicketForm()"></div>
+        </div>
+        <div class="group"><label>Ticket Form Title</label><input type="text" id="tktTitleIn" value="Get Your Tickets" oninput="renderTicketForm()"></div>
+        <div id="tkt-fields-container"></div>
+        <div class="color-row group" style="margin-top:10px;">
+            <button class="action-btn" style="width:100%; background:#333; color:#fff; font-size:9px;" onclick="addTicketField('text')">+ Add Text</button>
+            <button class="action-btn" style="width:100%; background:#333; color:#fff; font-size:9px;" onclick="addTicketField('dropdown')">+ Add Dropdown</button>
+        </div>
+        <button class="action-btn" style="width:100%; background:#ff4757; color:#fff; font-size:10px; margin-top:10px;" onclick="toggleTicketEditPlace()">Save & Back</button>
+    </div>
 </div>
 
 <div id="preview-wrap">
@@ -187,7 +224,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_trigger'])) {
             <p id="view-desc">Briefly describe your event.</p>
             <div class="btn-area">
                 <button id="view-reg" class="action-btn btn-reg" onclick="toggleFormPreview(true)">Register</button>
-                <button id="view-tkt" class="action-btn btn-ticket">Tickets</button>
+                <button id="view-tkt" class="action-btn btn-ticket" onclick="toggleTicketPreview(true)">Tickets</button>
                 <button class="action-btn btn-details" onclick="toggleDetailsView(true)">Details</button>
             </div>
         </div>
@@ -202,6 +239,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_trigger'])) {
         </div>
     </div>
 
+    <div id="ticket-preview-view" class="pane-overlay">
+        <div class="form-preview-box" id="tkt-box">
+            <button class="close-preview" onclick="toggleTicketPreview(false)">CLOSE PREVIEW</button>
+            <div id="tkt-image-preview" style="width:100%; height:150px; background-color:#eee; background-size:cover; background-position:center; border-radius:10px; margin-bottom:20px; display:none;"></div>
+            <h2 id="tkt-title-display" style="margin-bottom:10px; font-size: 28px;">Get Your Tickets</h2>
+            <p id="tkt-qty-display" style="color:#666; font-weight:bold; margin-bottom:20px; font-size: 14px;">Tickets Available: 100</p>
+            <div class="form-grid" id="tkt-grid"></div>
+            <button id="tkt-submit-btn" class="action-btn" style="display:block; width:100%; margin-top:30px; height: 50px; font-size: 1rem; color:white;">Purchase Ticket</button>
+        </div>
+    </div>
+
     <div id="details-view" class="pane-overlay">
         <div class="preview-box-dark">
             <button class="close-preview" onclick="toggleDetailsView(false)">CLOSE</button>
@@ -213,8 +261,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_trigger'])) {
 
 <script>
     let fields = [{ label: "Full Name", isFull: true, type: 'text' }, { label: "Department", isFull: false, type: 'dropdown', options: "Option 1\nOption 2" }];
+    let ticket_fields = [{ label: "Full Name", isFull: true, type: 'text' }];
 
-    // IMAGE PREVIEW LOGIC
+    // MAIN IMAGE PREVIEW LOGIC
     document.getElementById('fileIn').onchange = e => {
         if(e.target.files.length > 0) {
             const dz = document.getElementById('drop-zone');
@@ -224,6 +273,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_trigger'])) {
             const r = new FileReader(); 
             r.onload = ev => {
                 document.documentElement.style.setProperty('--bg-img', `url(${ev.target.result})`);
+            }; 
+            r.readAsDataURL(e.target.files[0]);
+        }
+    };
+
+    // TICKET IMAGE PREVIEW LOGIC
+    document.getElementById('tktFileIn').onchange = e => {
+        if(e.target.files.length > 0) {
+            const dz = document.getElementById('tkt-drop-zone');
+            dz.innerText = "File: " + e.target.files[0].name;
+            
+            const r = new FileReader(); 
+            r.onload = ev => {
+                const imgPreview = document.getElementById('tkt-image-preview');
+                imgPreview.style.backgroundImage = `url(${ev.target.result})`;
+                imgPreview.style.display = 'block';
             }; 
             r.readAsDataURL(e.target.files[0]);
         }
@@ -246,10 +311,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_trigger'])) {
 
     function toggleView() { document.body.classList.toggle('hide-side'); }
 
+    // REGISTRATION FORM TOGGLES
     function toggleEditPlace() {
         const isCurrentlyDesigning = document.getElementById('form-settings').style.display === 'block';
         if (!isCurrentlyDesigning) {
             document.getElementById('event-config').style.display = 'none';
+            document.getElementById('ticket-settings').style.display = 'none';
             document.getElementById('form-settings').style.display = 'block';
             document.getElementById('side-title').innerText = "Form Designer";
             toggleFormPreview(true); 
@@ -262,11 +329,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_trigger'])) {
         }
     }
 
+    // TICKET SETTINGS TOGGLES
+    function toggleTicketEditPlace() {
+        const isCurrentlyDesigning = document.getElementById('ticket-settings').style.display === 'block';
+        if (!isCurrentlyDesigning) {
+            document.getElementById('event-config').style.display = 'none';
+            document.getElementById('form-settings').style.display = 'none';
+            document.getElementById('ticket-settings').style.display = 'block';
+            document.getElementById('side-title').innerText = "Ticket Designer";
+            toggleTicketPreview(true); 
+            renderTicketFieldSettings();
+        } else {
+            document.getElementById('event-config').style.display = 'block';
+            document.getElementById('ticket-settings').style.display = 'none';
+            document.getElementById('side-title').innerText = "Config";
+            toggleTicketPreview(false); 
+        }
+    }
+
     function toggleFormPreview(show) {
         document.getElementById('form-preview-view').style.display = show ? 'flex' : 'none';
         document.getElementById('full-cover').style.display = show ? 'none' : 'flex';
         document.documentElement.style.setProperty('--blur', show ? '15px' : '0px');
         if(show) renderForm();
+    }
+
+    function toggleTicketPreview(show) {
+        document.getElementById('ticket-preview-view').style.display = show ? 'flex' : 'none';
+        document.getElementById('full-cover').style.display = show ? 'none' : 'flex';
+        document.documentElement.style.setProperty('--blur', show ? '15px' : '0px');
+        if(show) renderTicketForm();
     }
 
     function toggleDetailsView(show) {
@@ -280,18 +372,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_trigger'])) {
         }
     }
 
+    // REGISTRATION FIELD LOGIC
     function addField(type) {
         fields.push({ label: "New " + type, isFull: true, type: type, options: type === 'dropdown' ? "Option 1\nOption 2" : "" });
         renderFieldSettings();
         renderForm();
     }
-
     function removeField(i) {
         fields.splice(i, 1);
         renderFieldSettings();
         renderForm();
     }
-
     function renderFieldSettings() {
         const container = document.getElementById('fields-container');
         container.innerHTML = '';
@@ -299,6 +390,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_trigger'])) {
             const div = document.createElement('div'); div.className = 'field-block';
             let extra = f.type === 'dropdown' ? `<div class="group"><label>Options</label><textarea rows="2" oninput="fields[${i}].options=this.value; renderForm()">${f.options}</textarea></div>` : '';
             div.innerHTML = `<span class="remove-txt" onclick="removeField(${i})">Remove</span><div class="group"><label>${f.type} Label</label><input type="text" value="${f.label}" oninput="fields[${i}].label=this.value; renderForm()"></div>${extra}<label class="check-item"><input type="checkbox" ${f.isFull ? 'checked' : ''} onchange="fields[${i}].isFull=this.checked; renderForm()"> Full Width</label>`;
+            container.appendChild(div);
+        });
+    }
+
+    // TICKET FIELD LOGIC
+    function addTicketField(type) {
+        ticket_fields.push({ label: "New " + type, isFull: true, type: type, options: type === 'dropdown' ? "Option 1\nOption 2" : "" });
+        renderTicketFieldSettings();
+        renderTicketForm();
+    }
+    function removeTicketField(i) {
+        ticket_fields.splice(i, 1);
+        renderTicketFieldSettings();
+        renderTicketForm();
+    }
+    function renderTicketFieldSettings() {
+        const container = document.getElementById('tkt-fields-container');
+        container.innerHTML = '';
+        ticket_fields.forEach((f, i) => {
+            const div = document.createElement('div'); div.className = 'field-block';
+            let extra = f.type === 'dropdown' ? `<div class="group"><label>Options</label><textarea rows="2" oninput="ticket_fields[${i}].options=this.value; renderTicketForm()">${f.options}</textarea></div>` : '';
+            div.innerHTML = `<span class="remove-txt" onclick="removeTicketField(${i})">Remove</span><div class="group"><label>${f.type} Label</label><input type="text" value="${f.label}" oninput="ticket_fields[${i}].label=this.value; renderTicketForm()"></div>${extra}<label class="check-item"><input type="checkbox" ${f.isFull ? 'checked' : ''} onchange="ticket_fields[${i}].isFull=this.checked; renderTicketForm()"> Full Width</label>`;
             container.appendChild(div);
         });
     }
@@ -325,15 +438,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_trigger'])) {
         });
     }
 
+    function renderTicketForm() {
+        const bg = document.getElementById('tktBgIn').value;
+        const headCol = document.getElementById('tktTitleColIn').value;
+        const labCol = document.getElementById('tktLabelColIn').value;
+        const fBg = document.getElementById('tktFieldBgIn').value;
+        const fTxt = document.getElementById('tktFieldTextIn').value;
+        const btnC = document.getElementById('tktBtnIn').value;
+        const qty = document.getElementById('tktQtyIn').value;
+
+        document.getElementById('tkt-box').style.backgroundColor = bg;
+        document.getElementById('tkt-title-display').style.color = headCol;
+        document.getElementById('tkt-title-display').innerText = document.getElementById('tktTitleIn').value;
+        document.getElementById('tkt-submit-btn').style.backgroundColor = btnC;
+        document.getElementById('tkt-qty-display').innerText = "Tickets Available: " + qty;
+        
+        const grid = document.getElementById('tkt-grid'); grid.innerHTML = '';
+        ticket_fields.forEach(f => {
+            const item = document.createElement('div'); item.className = `form-item ${f.isFull ? 'full' : 'half'}`;
+            let input = f.type === 'dropdown' ? `<select style="width:100%; padding:12px; border:1px solid #ddd; border-radius:6px; background:${fBg}; color:${fTxt};">${f.options.split('\n').map(o => `<option>${o.trim()}</option>`).join('')}</select>` : `<input type="text" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:6px; background:${fBg}; color:${fTxt};">`;
+            item.innerHTML = `<label style="display:block; font-size:11px; font-weight:bold; color:${labCol}; margin-bottom:6px; text-transform:uppercase;">${f.label}</label>${input}`;
+            grid.appendChild(item);
+        });
+    }
+
     function updateUI() {
         const nameEl = document.getElementById('view-name');
         nameEl.innerText = document.getElementById('nameIn').value || "EVENT NAME";
         nameEl.style.color = document.getElementById('colorIn').value;
         nameEl.style.fontFamily = document.getElementById('fontSelect').value;
         document.getElementById('view-desc').innerText = document.getElementById('descIn').value || "Briefly describe your event.";
+        
         document.getElementById('view-reg').style.display = document.getElementById('regToggle').checked ? 'block' : 'none';
         document.getElementById('edit-table-btn').style.display = document.getElementById('regToggle').checked ? 'block' : 'none';
+        
         document.getElementById('view-tkt').style.display = document.getElementById('tktToggle').checked ? 'block' : 'none';
+        document.getElementById('edit-ticket-btn').style.display = document.getElementById('tktToggle').checked ? 'block' : 'none';
     }
 
     function saveJSON() {
@@ -380,7 +520,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_trigger'])) {
                 fieldTxt: document.getElementById('fieldTextIn').value, 
                 btn: document.getElementById('formBtnIn').value, 
                 formTitleText: document.getElementById('formTitleIn').value 
-            } 
+            },
+            ticketData: {
+                qty: document.getElementById('tktQtyIn').value,
+                fields: ticket_fields,
+                colors: {
+                    bg: document.getElementById('tktBgIn').value,
+                    title: document.getElementById('tktTitleColIn').value,
+                    label: document.getElementById('tktLabelColIn').value,
+                    fieldBg: document.getElementById('tktFieldBgIn').value,
+                    fieldTxt: document.getElementById('tktFieldTextIn').value,
+                    btn: document.getElementById('tktBtnIn').value,
+                    formTitleText: document.getElementById('tktTitleIn').value 
+                }
+            }
         };
         formData.append('save_trigger', 'true');
         formData.append('event_id', eSelect.value);
@@ -388,6 +541,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_trigger'])) {
         formData.append('name', nIn.value);
         formData.append('data_json', JSON.stringify(configData));
         formData.append('image_file', fIn.files[0]);
+        
+        // Append ticket image if uploaded
+        const tktFileIn = document.getElementById('tktFileIn');
+        if (tktFileIn.files.length > 0) {
+            formData.append('ticket_image_file', tktFileIn.files[0]);
+        }
 
         fetch(window.location.href, { method: 'POST', body: formData })
             .then(r => r.text())
