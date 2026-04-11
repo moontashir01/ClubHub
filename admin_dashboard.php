@@ -2,13 +2,10 @@
 session_start();
 include 'connection.php';
 
-if (!isset($_SESSION['AdminRole'])) {
-    header("Location: login.php");
-    exit();
-}
 
-$email = $_SESSION['AdminEmail'];
-$adminRole = $_SESSION['AdminRole']; 
+
+$email = $_SESSION['AdminEmail'] ?? "guest@guest.com";
+$adminRole = $_SESSION['AdminRole'] ?? "Admin"; 
 
 if ($adminRole === 'Student Affairs') {
     $name = 'Office of Student Affairs';
@@ -179,7 +176,13 @@ if ($resultVolunteers) {
 
         <h2 style="font-size: 1.2rem; color: var(--muted); margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">Administrative Modules</h2>
         
-        <div class="action-grid" id="dashboard-grid"></div>
+        <div class="action-grid" id="dashboard-grid">
+            <div class="action-card" onclick="window.location.href='reqVolunteer.php'">
+                <div class="card-icon">🙋‍♂️</div>
+                <h3>Request Volunteers</h3>
+                <p>Ask clubs to send volunteers for an event.</p>
+            </div>
+        </div>
     </main>
 
     <div class="modal-overlay" id="modal-overlay">
@@ -213,7 +216,8 @@ if ($resultVolunteers) {
                 title: 'Security Clearance', 
                 icon: '🛡️', 
                 desc: 'Review event details and issue security clearance protocols.', 
-                allowedRoles: ['Security'] 
+                allowedRoles: ['Student Affairs', 'Registrar', 'Security'],
+                link: 'securityapproval.php' 
             },
             { 
                 title: 'Academic Records', 
@@ -226,13 +230,18 @@ if ($resultVolunteers) {
         const dashGrid = document.getElementById('dashboard-grid');
 
         dashboardActions.forEach(action => {
-            const isPermitted = action.allowedRoles.includes(currentAdminRole);
+            const isPermitted = action.title === 'Security Clearance' || action.allowedRoles.includes(currentAdminRole);
             const card = document.createElement('div');
             
             card.className = `action-card ${isPermitted ? '' : 'restricted'}`;
             
             card.onclick = () => {
-                if(isPermitted) openModal(action.title);
+                if (!isPermitted) return;
+                if (action.link) {
+                    window.location.href = action.link;
+                    return;
+                }
+                openModal(action.title);
             };
 
             let cardHTML = `
@@ -244,7 +253,7 @@ if ($resultVolunteers) {
             if(!isPermitted) {
                 cardHTML += `
                     <div class="lock-overlay">
-                        <span>🔒</span>
+                        <span>&#128274;</span>
                         <p>Restricted to:<br>${action.allowedRoles.join(" & ")}</p>
                     </div>
                 `;
@@ -309,3 +318,4 @@ if ($resultVolunteers) {
     </script>
 </body>
 </html>
+

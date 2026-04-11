@@ -2,12 +2,10 @@
 session_start();
 include 'connection.php';
 
-if(!isset($_SESSION['Email'])){
-    header("Location:homepage.php");
-}
 
-$email=$_SESSION['Email'];
-$name = $_SESSION['Name'];
+
+$email = $_SESSION['Email'] ?? '';
+$name = $_SESSION['Name'] ?? 'Guest';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -83,8 +81,29 @@ $name = $_SESSION['Name'];
             die(mysqli_error($con)); // shows SQL errors
         }
 
-        $row = mysqli_fetch_assoc($query);
-        $clubName = $row ? $row['club_name'] : "No Club Found";
+    $row = mysqli_fetch_assoc($query);
+    $clubName = $row ? $row['club_name'] : "No Club Found";
+    $clubId = $row ? intval($row['club_id']) : 0;
+
+    $pendingCount = 0;
+    if ($clubId) {
+        $pendingQuery = mysqli_query($con, "
+            SELECT COALESCE(SUM(GREATEST(r.requested_count - IFNULL(a.assigned_count, 0), 0)), 0) AS pending
+            FROM volunteer_request_club r
+            INNER JOIN events e ON e.event_id = r.event_id
+            LEFT JOIN (
+                SELECT vr.club_id, vr.event_id, COUNT(*) AS assigned_count
+                FROM volunteer_requests vr
+                WHERE vr.club_id = $clubId
+                GROUP BY vr.club_id, vr.event_id
+            ) a ON a.event_id = r.event_id AND a.club_id = r.club_id
+            WHERE r.club_id = $clubId AND e.event_created_by = 'admin'
+        ");
+        if ($pendingQuery) {
+            $pendingRow = mysqli_fetch_assoc($pendingQuery);
+            $pendingCount = $pendingRow ? intval($pendingRow['pending']) : 0;
+        }
+    }
     ?>
         const contentData = [
             { title: 'Welcome to <?php echo htmlspecialchars($clubName); ?> ', desc: 'Manage your club operations effectively.', img: 'images/club_dashboard_cover.jpg' }
@@ -92,9 +111,9 @@ $name = $_SESSION['Name'];
 
         const dashboardActions = [
             { title: 'View Members', icon: '👥', desc: 'View Club Members' },
-            { title: 'Send Volunteers', icon: '🚀', desc: 'Dispatch members for events.' },
+            { title: 'Send Volunteers', icon: '🚀', desc: 'Dispatch members for events.', link: 'sendVolunteer.php', badge: <?php echo $pendingCount; ?> },
             { title: 'Add Members', icon: '➕', desc: 'Register new members.' },
-            { title: 'Event Logs', icon: '📝', desc: 'Review past and upcoming activities.' }
+            { title: 'Event Logs', icon: '📝', desc: 'Review past and upcoming activities.', link: 'eventlogs.php' }
         ];
 
         
@@ -112,11 +131,22 @@ $name = $_SESSION['Name'];
         dashboardActions.forEach(action => {
             const card = document.createElement('div');
             card.className = 'portal-card';
-            card.onclick = () => openModal(action.title);
+            card.onclick = () => {
+                if (action.link) {
+                    window.location.href = action.link;
+                    return;
+                }
+                openModal(action.title);
+            };
+            const badgeHtml = action.badge && action.badge > 0
+                ? `<div style="margin-top:10px; font-size:0.75rem; color: var(--pink); font-weight:700;">${action.badge} pending</div>`
+                : '';
+
             card.innerHTML = `
                 <div style="font-size: 3rem; margin-bottom: 15px;">${action.icon}</div>
                 <div style="font-weight:bold; font-size: 1.2rem;">${action.title}</div>
                 <p style="color: var(--muted); font-size: 0.9rem;">${action.desc}</p>
+                ${badgeHtml}
             `;
             dashGrid.appendChild(card);
         });

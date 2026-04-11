@@ -39,7 +39,8 @@ CREATE TABLE `clubs` (
 INSERT INTO `clubs` (`club_id`, `club_name`) VALUES
 (3, 'NSU CDC'),
 (2, 'NSU YES'),
-(1, 'NSUSS');
+(1, 'NSUSS'),
+(4, 'Admin Office');
 
 -- --------------------------------------------------------
 
@@ -105,6 +106,7 @@ CREATE TABLE `events` (
   `event_duration` decimal(4,2) DEFAULT NULL,
   `event_date` datetime DEFAULT NULL,
   `event_creator` varchar(255) DEFAULT NULL,
+  `event_created_by` varchar(20) NOT NULL DEFAULT 'club',
   `event_availablity` tinyint(1) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -112,9 +114,10 @@ CREATE TABLE `events` (
 -- Dumping data for table `events`
 --
 
-INSERT INTO `events` (`event_id`, `club_id`, `event_name`, `event_duration`, `event_date`, `event_creator`, `event_availablity`) VALUES
-(1, 1, 'Boshonto Utshob 2026', 7.50, '2026-02-25 08:00:00', 'NSUSS', 1),
-(2, 2, 'Excelsor', 2.50, '2026-02-27 13:00:00', 'NSU YES', 1);
+INSERT INTO `events` (`event_id`, `club_id`, `event_name`, `event_duration`, `event_date`, `event_creator`, `event_created_by`, `event_availablity`) VALUES
+(1, 1, 'Boshonto Utshob 2026', 7.50, '2026-02-25 08:00:00', 'NSUSS', 'club', 1),
+(2, 2, 'Excelsor', 2.50, '2026-02-27 13:00:00', 'NSU YES', 'club', 1),
+(3, 4, 'Admission Test 2026', 4.00, '2026-05-10 09:00:00', 'Admin Office', 'admin', 1);
 
 -- --------------------------------------------------------
 
@@ -147,10 +150,10 @@ CREATE TABLE `forms_responses` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `space_bookings`
+-- Table structure for table `room_bookings`
 --
 
-CREATE TABLE `space_bookings` (
+CREATE TABLE `room_bookings` (
   `booking_id` int(11) NOT NULL,
   `club_id` int(11) DEFAULT NULL,
   `booking_date` date NOT NULL,
@@ -159,10 +162,10 @@ CREATE TABLE `space_bookings` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `space_bookings`
+-- Dumping data for table `room_bookings`
 --
 
-INSERT INTO `space_bookings` (`booking_id`, `club_id`, `booking_date`, `slot`, `status`) VALUES
+INSERT INTO `room_bookings` (`booking_id`, `club_id`, `booking_date`, `slot`, `status`) VALUES
 (17, 2, '2026-03-09', 1, 'Confirmed'),
 (23, 2, '2026-03-09', 2, 'Pending');
 
@@ -291,10 +294,31 @@ INSERT INTO `user` (`email`, `Name`, `Password`, `created_at`, `portal`) VALUES
 
 CREATE TABLE `volunteer_requests` (
   `req_ID` int(11) NOT NULL,
-  `full_name` varchar(255) NOT NULL,
-  `student_id` bigint(20) NOT NULL,
+  `club_id` int(11) NOT NULL,
+  `student_id` varchar(20) NOT NULL,
+  `event_id` int(11) NOT NULL,
+  `full_name` varchar(255) DEFAULT NULL,
   `student_email` varchar(255) DEFAULT NULL,
-  `event_id` int(11) DEFAULT NULL
+  `status` varchar(20) NOT NULL DEFAULT 'Sent',
+  `assigned_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `volunteer_request_club`
+--
+
+CREATE TABLE `volunteer_request_club` (
+  `id` int(11) NOT NULL,
+  `event_id` int(11) NOT NULL,
+  `club_id` int(11) NOT NULL,
+  `requested_count` int(11) NOT NULL DEFAULT 0,
+  `note` varchar(500) DEFAULT NULL,
+  `deadline` date DEFAULT NULL,
+  `status` varchar(20) DEFAULT 'Open',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -338,9 +362,9 @@ ALTER TABLE `forms_responses`
   ADD KEY `fk_event_id` (`event_id`);
 
 --
--- Indexes for table `space_bookings`
+-- Indexes for table `room_bookings`
 --
-ALTER TABLE `space_bookings`
+ALTER TABLE `room_bookings`
   ADD PRIMARY KEY (`booking_id`),
   ADD KEY `club_id` (`club_id`);
 
@@ -361,7 +385,19 @@ ALTER TABLE `user`
 -- Indexes for table `volunteer_requests`
 --
 ALTER TABLE `volunteer_requests`
-  ADD PRIMARY KEY (`req_ID`);
+  ADD PRIMARY KEY (`req_ID`),
+  ADD UNIQUE KEY `unique_event_student` (`event_id`, `student_id`),
+  ADD KEY `idx_vr_event` (`event_id`),
+  ADD KEY `idx_vr_club` (`club_id`),
+  ADD KEY `idx_vr_student` (`student_id`);
+
+--
+-- Indexes for table `volunteer_request_club`
+--
+ALTER TABLE `volunteer_request_club`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_event_club` (`event_id`, `club_id`),
+  ADD KEY `idx_vrc_club` (`club_id`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -371,7 +407,7 @@ ALTER TABLE `volunteer_requests`
 -- AUTO_INCREMENT for table `clubs`
 --
 ALTER TABLE `clubs`
-  MODIFY `club_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `club_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `club_members`
@@ -383,7 +419,7 @@ ALTER TABLE `club_members`
 -- AUTO_INCREMENT for table `events`
 --
 ALTER TABLE `events`
-  MODIFY `event_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `event_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `forms_responses`
@@ -392,9 +428,9 @@ ALTER TABLE `forms_responses`
   MODIFY `response_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
--- AUTO_INCREMENT for table `space_bookings`
+-- AUTO_INCREMENT for table `room_bookings`
 --
-ALTER TABLE `space_bookings`
+ALTER TABLE `room_bookings`
   MODIFY `booking_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
 
 --
@@ -402,6 +438,12 @@ ALTER TABLE `space_bookings`
 --
 ALTER TABLE `volunteer_requests`
   MODIFY `req_ID` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `volunteer_request_club`
+--
+ALTER TABLE `volunteer_request_club`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- Constraints for dumped tables
@@ -435,17 +477,37 @@ ALTER TABLE `forms_responses`
   ADD CONSTRAINT `fk_event_id` FOREIGN KEY (`event_id`) REFERENCES `events` (`event_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Constraints for table `space_bookings`
+-- Constraints for table `room_bookings`
 --
-ALTER TABLE `space_bookings`
-  ADD CONSTRAINT `space_bookings_ibfk_1` FOREIGN KEY (`club_id`) REFERENCES `clubs` (`club_id`);
+ALTER TABLE `room_bookings`
+  ADD CONSTRAINT `room_bookings_ibfk_1` FOREIGN KEY (`club_id`) REFERENCES `clubs` (`club_id`);
 
 --
 -- Constraints for table `students`
 --
 ALTER TABLE `students`
   ADD CONSTRAINT `fk_student_user_email` FOREIGN KEY (`student_email`) REFERENCES `user` (`email`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `volunteer_requests`
+--
+ALTER TABLE `volunteer_requests`
+  ADD CONSTRAINT `fk_vr_event` FOREIGN KEY (`event_id`) REFERENCES `events` (`event_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_vr_club` FOREIGN KEY (`club_id`) REFERENCES `clubs` (`club_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_vr_student` FOREIGN KEY (`student_id`) REFERENCES `students` (`student_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `volunteer_request_club`
+--
+ALTER TABLE `volunteer_request_club`
+  ADD CONSTRAINT `fk_vrc_event` FOREIGN KEY (`event_id`) REFERENCES `events` (`event_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_vrc_club` FOREIGN KEY (`club_id`) REFERENCES `clubs` (`club_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 COMMIT;
+
+ALTER TABLE `events` 
+ADD COLUMN `security_clearance` VARCHAR(20) DEFAULT 'Pending' AFTER `event_availablity`,
+ADD COLUMN `admin_clearance` VARCHAR(20) DEFAULT 'Pending' AFTER `security_clearance`,
+ADD COLUMN `clearance_status` VARCHAR(20) DEFAULT 'Draft';
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;

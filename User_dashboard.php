@@ -2,12 +2,7 @@
 session_start();
 include 'connection.php';
 
-if(!isset($_SESSION['Email'])){
-    header("Location:homepage.php");
-}
 
-$email=$_SESSION['Email'];
-$name = $_SESSION['Name'];
 ?>
 
 
@@ -22,7 +17,7 @@ $name = $_SESSION['Name'];
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>UniLink | Pro Portal</title>
+    <title>ClubHub | User Portal</title>
 
     <style>
 

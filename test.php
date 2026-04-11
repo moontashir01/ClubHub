@@ -8,10 +8,7 @@ use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\SMTP;
 
-if(!isset($_SESSION['Email'])){
-    header("Location:homepage.php");
-    exit();
-}
+$activeUserEmail = $_SESSION['Email'] ?? ('guest+' . session_id() . '@clubhub.local');
 
 // --- UNIFIED SUBMISSION & MAILING HANDLER ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_response'])) {
@@ -22,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_response'])) {
     error_reporting(E_ALL);
 
     $event_id = (int)$_POST['event_id']; 
-    $user_email = $_SESSION['Email'];
+    $user_email = $activeUserEmail;
     $form_type = $_POST['form_type']; // 'register' or 'ticket'
     
     // Inject the form_type into the JSON so you can identify it later
