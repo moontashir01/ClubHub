@@ -520,6 +520,12 @@ ALTER TABLE `volunteer_requests`
 ALTER TABLE `volunteer_request_club`
   ADD CONSTRAINT `fk_vrc_event` FOREIGN KEY (`event_id`) REFERENCES `events` (`event_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_vrc_club` FOREIGN KEY (`club_id`) REFERENCES `clubs` (`club_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- Adding columns for OTP-based password reset
+ALTER TABLE user
+ADD COLUMN reset_otp VARCHAR(6) DEFAULT NULL;
+
+
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

@@ -125,9 +125,12 @@ include 'connection.php';
                         <label>Email Address</label>
                         <input type="email" name="Email" required>
                     </div>
-                    <div class="input-group">
+                    <div class="input-group" style="margin-bottom: 5px;">
                         <label>Password</label>
                         <input type="password" name="Password" required>
+                    </div>
+                    <div style="text-align: right; margin-bottom: 20px;">
+                        <a href="forgot_password.php" style="color: #888; text-decoration: none; font-size: 0.75rem; transition: 0.3s;" onmouseover="this.style.color='var(--pink)'" onmouseout="this.style.color='#888'">Forgot Password?</a>
                     </div>
                     <button type="submit" name="submit" class="login-btn">Sign In</button>
                 </form>

@@ -20,7 +20,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if ($result->num_rows === 1) {
             $row = $result->fetch_assoc();
             
-            if ($row['is_verified'] == 1) {
+            $is_reset_mode = (isset($_SESSION['auth_mode']) && $_SESSION['auth_mode'] === 'reset_password');
+            
+            if (!$is_reset_mode && $row['is_verified'] == 1) {
                 $error = "Account is already verified. You can log in.";
             } elseif ($row['otp_code'] === $otp) {
                 // Check if expired
@@ -28,18 +30,33 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $current_time = time();
                 
                 if ($current_time <= $expiry_time) {
-                    // Valid and not expired: Set is_verified = 1 and clear the otp_code
-                    $update_stmt = $con->prepare("UPDATE user SET is_verified = 1, otp_code = NULL, otp_expiry = NULL WHERE email = ?");
-                    $update_stmt->bind_param("s", $email);
-                    if ($update_stmt->execute()) {
-                        $success = "Verification successful! You can now log in.";
-                        // You can automatically log them in here if desired or redirect to homepage
-                        $_SESSION['msg'] = "Account verified successfully! Please log in.";
-                        $_SESSION['msg_type'] = "success";
-                        header("Location: homepage.php");
-                        exit();
+                    // Valid and not expired
+                    if (isset($_SESSION['auth_mode']) && $_SESSION['auth_mode'] === 'reset_password') {
+                        // For reset password, clear OTP and grant reset access
+                        $update_stmt = $con->prepare("UPDATE user SET otp_code = NULL, otp_expiry = NULL WHERE email = ?");
+                        $update_stmt->bind_param("s", $email);
+                        if ($update_stmt->execute()) {
+                            $_SESSION['can_reset'] = true;
+                            $_SESSION['reset_email'] = $email;
+                            header("Location: reset_password.php");
+                            exit();
+                        } else {
+                            $error = "Error updating verification status.";
+                        }
                     } else {
-                        $error = "Error updating verification status.";
+                        // Registration case: Set is_verified = 1 and clear the otp_code
+                        $update_stmt = $con->prepare("UPDATE user SET is_verified = 1, otp_code = NULL, otp_expiry = NULL WHERE email = ?");
+                        $update_stmt->bind_param("s", $email);
+                        if ($update_stmt->execute()) {
+                            $success = "Verification successful! You can now log in.";
+                            // You can automatically log them in here if desired or redirect to homepage
+                            $_SESSION['msg'] = "Account verified successfully! Please log in.";
+                            $_SESSION['msg_type'] = "success";
+                            header("Location: homepage.php");
+                            exit();
+                        } else {
+                            $error = "Error updating verification status.";
+                        }
                     }
                 } else {
                     $error = "The OTP has expired. Please request a new one.";
@@ -76,9 +93,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 </head>
 <body>
     <div class="verify-box">
-        <h2>Account Verification</h2>
-        <p style="color: #bbb; margin-bottom: 30px; font-size: 0.9rem;">We've sent a 6-digit OTP to your email. Please enter it below to verify your account.</p>
-        
+        <?php if (isset($_SESSION['auth_mode']) && $_SESSION['auth_mode'] === 'reset_password'): ?>
+            <h2>Password Reset</h2>
+            <p style="color: #bbb; margin-bottom: 30px; font-size: 0.9rem;">We've sent a 6-digit OTP to your email. Please enter it below to reset your password.</p>
+        <?php else: ?>
+            <h2>Account Verification</h2>
+            <p style="color: #bbb; margin-bottom: 30px; font-size: 0.9rem;">We've sent a 6-digit OTP to your email. Please enter it below to verify your account.</p>
+        <?php endif; ?>
         <?php if ($error): ?>
             <div class="alert alert-error"><?php echo htmlspecialchars($error); ?></div>
         <?php endif; ?>
@@ -92,7 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <label>6-Digit OTP</label>
                 <input type="text" name="otp" required minlength="6" maxlength="6" pattern="\d{6}" autocomplete="off">
             </div>
-            <button type="submit" class="btn">Verify Account</button>
+            <button type="submit" class="btn"><?php echo (isset($_SESSION['auth_mode']) && $_SESSION['auth_mode'] === 'reset_password') ? 'Verify OTP' : 'Verify Account'; ?></button>
         </form>
         
         <p style="margin-top: 20px; font-size: 0.85rem; color: #888;">

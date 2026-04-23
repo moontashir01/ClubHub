@@ -7,7 +7,7 @@ require 'PHPMailer/Exception.php';
 require 'PHPMailer/PHPMailer.php';
 require 'PHPMailer/SMTP.php';
 
-function sendVerificationEmail($email, $otp) {
+function sendVerificationEmail($email, $otp, $type = 'verification') {
     $mail = new PHPMailer(true);
 
     try {
@@ -26,14 +26,27 @@ function sendVerificationEmail($email, $otp) {
 
         // Content
         $mail->isHTML(true);
-        $mail->Subject = 'ClubHub - Verify Your Account';
         
+        if ($type === 'reset') {
+            $mail->Subject = 'ClubHub - Password Reset OTP';
+            $greetingText = 'Hello,';
+            $mainText = 'We received a request to reset your ClubHub password. Please use the following One-Time Password (OTP) to proceed.';
+            $altText = "Your ClubHub password reset OTP is: $otp. It is valid for 5 minutes.";
+            $headerText = 'Password Reset';
+        } else {
+            $mail->Subject = 'ClubHub - Verify Your Account';
+            $greetingText = 'Hello,';
+            $mainText = 'Thank you for registering at ClubHub. Please use the following One-Time Password (OTP) to verify your account.';
+            $altText = "Your ClubHub verification OTP is: $otp. It is valid for 5 minutes.";
+            $headerText = 'ClubHub Verification';
+        }
+
         // Clean HTML Email Template
         $mail->Body    = "
             <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px; background-color: #f9f9f9;'>
-                <h2 style='text-align: center; color: #ff4d8d;'>ClubHub Verification</h2>
-                <p style='font-size: 16px; color: #333;'>Hello,</p>
-                <p style='font-size: 16px; color: #333;'>Thank you for registering at ClubHub. Please use the following One-Time Password (OTP) to verify your account.</p>
+                <h2 style='text-align: center; color: #ff4d8d;'>$headerText</h2>
+                <p style='font-size: 16px; color: #333;'>$greetingText</p>
+                <p style='font-size: 16px; color: #333;'>$mainText</p>
                 <div style='text-align: center; margin: 30px 0;'>
                     <span style='font-size: 32px; font-weight: bold; background: #fff; padding: 10px 20px; border: 2px dashed #ff4d8d; color: #ff4d8d; border-radius: 5px;'>$otp</span>
                 </div>
@@ -44,7 +57,7 @@ function sendVerificationEmail($email, $otp) {
             </div>
         ";
         
-        $mail->AltBody = "Your ClubHub verification OTP is: $otp. It is valid for 5 minutes.";
+        $mail->AltBody = $altText;
 
         $mail->send();
         return true;
