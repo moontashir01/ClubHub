@@ -342,7 +342,7 @@ if ($result) {
     <section class="clubs-section" id="clubs">
         <div class="section-title">Explore Clubs</div>
         <div class="club-grid">
-            <button class="club-card">
+            <button class="club-card" onclick="window.location.href='club_info_display.php?id=1'">
                 <img src="images/debate-1.png">
                 <div class="label">Debate Society</div>
             </button>
