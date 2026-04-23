@@ -29,7 +29,9 @@ SET time_zone = "+00:00";
 
 CREATE TABLE `clubs` (
   `club_id` int(11) NOT NULL,
-  `club_name` varchar(255) NOT NULL
+  `club_name` varchar(255) NOT NULL,
+  PRIMARY KEY (`club_id`),
+  UNIQUE KEY `club_name` (`club_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -41,6 +43,24 @@ INSERT INTO `clubs` (`club_id`, `club_name`) VALUES
 (2, 'NSU YES'),
 (1, 'NSUSS'),
 (4, 'Admin Office');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `club_role_definitions`
+--
+
+CREATE TABLE `club_role_definitions` (
+  `role_id` int(11) NOT NULL AUTO_INCREMENT,
+  `club_id` int(11) NOT NULL,
+  `role_name` varchar(100) NOT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`role_id`),
+  UNIQUE KEY `uniq_club_role` (`club_id`, `role_name`),
+  KEY `idx_club_role_active` (`club_id`, `is_active`),
+  CONSTRAINT `fk_role_definition_club` FOREIGN KEY (`club_id`) REFERENCES `clubs` (`club_id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -107,7 +127,10 @@ CREATE TABLE `events` (
   `event_date` datetime DEFAULT NULL,
   `event_creator` varchar(255) DEFAULT NULL,
   `event_created_by` varchar(20) NOT NULL DEFAULT 'club',
-  `event_availablity` tinyint(1) DEFAULT NULL
+  `event_availablity` tinyint(1) DEFAULT NULL,
+  `security_clearance` varchar(20) DEFAULT 'Pending',
+  `admin_clearance` varchar(20) DEFAULT 'Pending',
+  `clearance_status` varchar(20) DEFAULT 'Draft'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -238,7 +261,10 @@ CREATE TABLE `user` (
   `Name` varchar(100) NOT NULL,
   `Password` varchar(255) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `portal` varchar(255) DEFAULT 'student'
+  `portal` varchar(255) DEFAULT 'student',
+  `otp_code` varchar(6) DEFAULT NULL,
+  `otp_expiry` datetime DEFAULT NULL,
+  `is_verified` tinyint(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -324,13 +350,6 @@ CREATE TABLE `volunteer_request_club` (
 --
 -- Indexes for dumped tables
 --
-
---
--- Indexes for table `clubs`
---
-ALTER TABLE `clubs`
-  ADD PRIMARY KEY (`club_id`),
-  ADD UNIQUE KEY `club_name` (`club_name`);
 
 --
 -- Indexes for table `club_members`
@@ -453,7 +472,6 @@ ALTER TABLE `volunteer_request_club`
 -- Constraints for table `club_members`
 --
 ALTER TABLE `club_members`
-  ADD CONSTRAINT `club_members_ibfk_1` FOREIGN KEY (`student_id`) REFERENCES `students` (`student_id`),
   ADD CONSTRAINT `club_members_ibfk_2` FOREIGN KEY (`club_id`) REFERENCES `clubs` (`club_id`),
   ADD CONSTRAINT `fk_cm_student_id` FOREIGN KEY (`student_id`) REFERENCES `students` (`student_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -503,11 +521,6 @@ ALTER TABLE `volunteer_request_club`
   ADD CONSTRAINT `fk_vrc_event` FOREIGN KEY (`event_id`) REFERENCES `events` (`event_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_vrc_club` FOREIGN KEY (`club_id`) REFERENCES `clubs` (`club_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 COMMIT;
-
-ALTER TABLE `events` 
-ADD COLUMN `security_clearance` VARCHAR(20) DEFAULT 'Pending' AFTER `event_availablity`,
-ADD COLUMN `admin_clearance` VARCHAR(20) DEFAULT 'Pending' AFTER `security_clearance`,
-ADD COLUMN `clearance_status` VARCHAR(20) DEFAULT 'Draft';
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;

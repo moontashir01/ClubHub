@@ -9,8 +9,8 @@
       public function authenticate($email, $password) {
           $email = trim($email);
           
-          // 1. Updated query to use 'portal' instead of 'Role'
-          $stmt = $this->db->prepare("SELECT Name, Password, portal FROM user WHERE email = ?");
+          // 1. Updated query to use 'portal' instead of 'Role' and check 'is_verified'
+          $stmt = $this->db->prepare("SELECT Name, Password, portal, is_verified FROM user WHERE email = ?");
           $stmt->bind_param("s", $email);
           $stmt->execute();
           $result = $stmt->get_result();
@@ -22,6 +22,11 @@
                   $_SESSION['Name'] = $row['Name'];
                   $_SESSION['Email'] = $email; 
                   $_SESSION['Portal'] = $row['portal']; // Store new column value in session
+                  $_SESSION['is_verified'] = $row['is_verified'];
+
+                  if ($row['is_verified'] == 0) {
+                      return 'unverified';
+                  }
 
                   // Priority 1: Check if global portal is 'admin'
                   if ($row['portal'] === 'admin') {
@@ -76,6 +81,9 @@
               } 
               elseif ($auth_result === 'student'){
                   header("Location: User_dashboard.php"); 
+              }
+              elseif ($auth_result === 'unverified') {
+                  header("Location: verify.php?email=" . urlencode($email));
               }
               exit();
           } else {

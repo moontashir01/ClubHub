@@ -1,6 +1,7 @@
 <?php 
 session_start();
 include 'connection.php';
+include 'mailer.php';
 
 class User {
     private $con;
@@ -33,8 +34,12 @@ class User {
         mysqli_begin_transaction($this->con);
 
         try {
+            // Generate OTP
+            $otp = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
+            $otp_expiry = date('Y-m-d H:i:s', strtotime('+5 minutes'));
+
             // 1. Insert into 'user' first (Portal will use its DB default value)
-            $sql_user = "INSERT INTO `user` (email, Name, password) VALUES ('$email', '$name', '$hashed_password')";
+            $sql_user = "INSERT INTO `user` (email, Name, password, otp_code, otp_expiry, is_verified) VALUES ('$email', '$name', '$hashed_password', '$otp', '$otp_expiry', 0)";
             if (!mysqli_query($this->con, $sql_user)) {
                 throw new Exception("User table error: " . mysqli_error($this->con));
             }
@@ -49,9 +54,12 @@ class User {
             // If both queries are successful, commit to database
             mysqli_commit($this->con);
 
-            $_SESSION['msg'] = "Account created successfully!";
+            // Send Verification Email
+            sendVerificationEmail($email, $otp);
+
+            $_SESSION['msg'] = "Account created! Please check your email for the OTP.";
             $_SESSION['msg_type'] = "success"; 
-            header("Location: homepage.php");
+            header("Location: verify.php?email=" . urlencode($email));
             exit();
 
         } catch (Exception $e) {
