@@ -2,10 +2,7 @@
 session_start();
 include 'connection.php';
 
-if (!isset($_SESSION['Email']) || trim((string)$_SESSION['Email']) === '') {
-    header('Location: homepage.php');
-    exit;
-}
+
 
 if (!isset($_SESSION['manage_members_csrf'])) {
     $_SESSION['manage_members_csrf'] = bin2hex(random_bytes(32));

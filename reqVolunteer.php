@@ -22,7 +22,7 @@ if (!$table_check || mysqli_num_rows($table_check) === 0) {
 }
 
 $events = [];
-$event_query = @mysqli_query($con, "SELECT event_id, event_name, event_date, event_creator FROM events WHERE event_availablity = 1 AND event_created_by = 'admin' ORDER BY event_date DESC");
+$event_query = @mysqli_query($con, "SELECT event_id, event_name, event_date, event_creator FROM events WHERE event_availablity = 1 AND event_creator = 'admin' ORDER BY event_date DESC");
 if ($event_query) {
     while ($row = mysqli_fetch_assoc($event_query)) {
         $events[] = $row;

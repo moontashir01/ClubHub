@@ -97,7 +97,7 @@ $name = $_SESSION['Name'] ?? 'Guest';
                 WHERE vr.club_id = $clubId
                 GROUP BY vr.club_id, vr.event_id
             ) a ON a.event_id = r.event_id AND a.club_id = r.club_id
-            WHERE r.club_id = $clubId AND e.event_created_by = 'admin'
+            WHERE r.club_id = $clubId AND e.event_creator = 'admin'
         ");
         if ($pendingQuery) {
             $pendingRow = mysqli_fetch_assoc($pendingQuery);

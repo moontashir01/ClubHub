@@ -70,7 +70,7 @@ if ($club_id) {
         FROM volunteer_request_club r
         INNER JOIN events e ON e.event_id = r.event_id
         WHERE r.club_id = ?
-          AND e.event_created_by = 'admin'
+          AND e.event_creator = 'admin'
           AND LOWER(COALESCE(r.status, '')) <> 'cancelled'
         ORDER BY e.event_date DESC
     ");
