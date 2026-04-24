@@ -13,21 +13,18 @@ $activeUserEmail = $_SESSION['Email'] ?? ('guest+' . session_id() . '@clubhub.lo
 // --- UNIFIED SUBMISSION & MAILING HANDLER ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_response'])) {
     
-    // Turn on error reporting temporarily to catch hidden PHP crashes
     ini_set('display_errors', 1);
     ini_set('display_startup_errors', 1);
     error_reporting(E_ALL);
 
     $event_id = (int)$_POST['event_id']; 
     $user_email = $activeUserEmail;
-    $form_type = $_POST['form_type']; // 'register' or 'ticket'
+    $form_type = $_POST['form_type']; 
     
-    // Inject the form_type into the JSON so you can identify it later
     $response_array = json_decode($_POST['response_json'], true);
     $response_array['_form_type'] = $form_type; 
     $final_json = json_encode($response_array); 
 
-    // 1. Check if user already submitted THIS SPECIFIC form type for this event
     $check = $con->prepare("SELECT response_data FROM forms_responses WHERE event_id = ? AND user_email = ?");
     $check->bind_param("is", $event_id, $user_email);
     $check->execute();
@@ -48,13 +45,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_response'])) {
         exit;
     } 
 
-    // 2. Fetch Event Config (needed for Club Name, House Full, and Ticket Image)
     $cfg_query = mysqli_query($con, "SELECT config_name, config_data FROM event_configs WHERE event_id = $event_id");
     $cfg_row = mysqli_fetch_assoc($cfg_query);
     $cfg_data = json_decode($cfg_row['config_data'], true);
     $club_name = $cfg_row['config_name'] ?? 'The Club';
 
-    // 3. House Full check for tickets
     if ($form_type === 'ticket') {
         $total_qty = (int)($cfg_data['ticketData']['qty'] ?? 0);
         $sold_query = mysqli_query($con, "SELECT COUNT(*) as c FROM forms_responses WHERE event_id = $event_id AND response_data LIKE '%\"_form_type\":\"ticket\"%'");
@@ -66,7 +61,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_response'])) {
             exit;
         }
 
-        // --- NEW LOGIC: SEND EMAIL FIRST ---
         if (!file_exists(__DIR__ . '/PHPMailer/PHPMailer.php')) {
             echo "MISSING_PHPMAILER_FOLDER: I cannot find the 'PHPMailer' folder.";
             exit;
@@ -89,7 +83,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_response'])) {
             $mail->setFrom('sagorsrijoy123@gmail.com', $club_name);
             $mail->addAddress($user_email);
 
-            // Try to extract the user's name from the submitted form fields safely
             $attendee_name = "";
             foreach ($response_array as $key => $value) {
                 if (stripos($key, 'name') !== false) {
@@ -98,7 +91,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_response'])) {
                 }
             }
 
-            // Find and attach the specific ticket image safely
             $ticket_image_name = $cfg_data['ticket_image_path'] ?? '';
             if (!empty($ticket_image_name)) {
                 $imagePath = __DIR__ . '/images/' . $ticket_image_name;
@@ -117,10 +109,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_response'])) {
                     <p>Thanks,</p>
                 </div>";
 
-            // If this fails, it jumps straight to catch() and DOES NOT save to database
             $mail->send(); 
 
-            // --- IF EMAIL SUCCESSFUL, INSERT INTO DATABASE ---
             $stmt = $con->prepare("INSERT INTO forms_responses (event_id, user_email, response_data) VALUES (?, ?, ?)");
             $stmt->bind_param("iss", $event_id, $user_email, $final_json);
             if ($stmt->execute()) {
@@ -132,11 +122,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_response'])) {
 
         } catch (Exception $e) {
             echo "MAIL_SMTP_ERROR: " . $e->getMessage(); 
-            exit; // Stop entirely so we don't save to database
+            exit; 
         }
 
     } else {
-        // --- REGULAR REGISTRATION (No Email Required) ---
         $stmt = $con->prepare("INSERT INTO forms_responses (event_id, user_email, response_data) VALUES (?, ?, ?)");
         $stmt->bind_param("iss", $event_id, $user_email, $final_json);
         
@@ -147,11 +136,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_response'])) {
         }
         $stmt->close();
     }
-    
     exit;
 }
 
-// Fetch ticket sales counts to calculate remaining tickets dynamically
 $sales_query = mysqli_query($con, "SELECT event_id, COUNT(*) as sold FROM forms_responses WHERE response_data LIKE '%\"_form_type\":\"ticket\"%' GROUP BY event_id");
 $tickets_sold = [];
 if ($sales_query) {
@@ -168,8 +155,6 @@ $events_for_js = [];
 if ($result) {
     while($row = mysqli_fetch_assoc($result)) {
         $config = json_decode($row['config_data'], true);
-        
-        // Calculate remaining tickets
         $total_tickets = isset($config['ticketData']['qty']) ? (int)$config['ticketData']['qty'] : 0;
         $sold = $tickets_sold[$row['event_id']] ?? 0;
         $remaining = max(0, $total_tickets - $sold);
@@ -202,20 +187,14 @@ if ($result) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UniLink | Pro Portal</title>
+    <title>Club Hub</title>
     <style>
         :root { --pink: #ff4d8d; --dark-bg: #0b0b13; --card: #161621; --transition: 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
         html { scroll-snap-type: y mandatory; scroll-behavior: smooth; }
         body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--dark-bg); color: white; overflow-x: hidden; }
         * { text-transform: none !important; }
 
-        /* Status Toast Styles */
-        #status-toast {
-            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-            color: white; padding: 12px 30px; border-radius: 30px;
-            font-weight: bold; z-index: 10000; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        }
-
+        #status-toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); color: white; padding: 12px 30px; border-radius: 30px; font-weight: bold; z-index: 10000; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
         nav { display: flex; justify-content: space-between; padding: 20px 5%; background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent); position: fixed; width: 90%; z-index: 1000; align-items: center; }
         .logo { font-size: 26px; font-weight: 900; letter-spacing: -1px; }
 
@@ -227,7 +206,6 @@ if ($result) {
         .content { position: relative; z-index: 10; max-width: 650px; }
         h1 { font-size: 4rem; margin: 0 0 5px 0; font-weight: 800; }
         .description { font-size: 1.1rem; color: #ccc; line-height: 1.6; margin-bottom: 20px; }
-
         .timer-container { margin-bottom: 20px; font-family: monospace; font-size: 1.2rem; background: rgba(255, 77, 141, 0.15); display: inline-block; padding: 8px 15px; border-radius: 5px; border-left: 3px solid var(--pink); color: var(--pink); font-weight: bold; }
 
         .scroll-hint { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; flex-direction: column; align-items: center; opacity: 0.5; color: white; text-decoration: none; font-size: 10px; }
@@ -256,30 +234,28 @@ if ($result) {
         .mini-card.active { opacity: 1; border-color: var(--pink); transform: translateY(-10px) scale(1.1); box-shadow: 0 5px 15px rgba(255, 77, 141, 0.4); }
         .mini-label { position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.7); font-size: 10px; padding: 4px; text-align: center; font-weight: bold; }
 
-        /* BUTTON HOVER "POP" EFFECTS */
-        button { 
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important; 
-            will-change: transform, box-shadow;
-        }
-        button:not([disabled]):hover { 
-            transform: translateY(-4px) scale(1.03) !important; 
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important; 
-            filter: brightness(1.15) !important;
-        }
-        button:not([disabled]):active { 
-            transform: translateY(1px) scale(0.98) !important; 
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important; 
-        }
+        button { transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important; will-change: transform, box-shadow; }
+        button:not([disabled]):hover { transform: translateY(-4px) scale(1.03) !important; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important; filter: brightness(1.15) !important; }
+        button:not([disabled]):active { transform: translateY(1px) scale(0.98) !important; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important; }
         
-        nav a[href="logout.php"] {
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
-            display: inline-block;
-        }
-        nav a[href="logout.php"]:hover {
-            transform: translateY(-3px) scale(1.05) !important;
-            box-shadow: 0 8px 20px rgba(255, 77, 141, 0.5) !important;
-            filter: brightness(1.15) !important;
-        }
+        nav a[href="logout.php"] { transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important; display: inline-block; }
+        nav a[href="logout.php"]:hover { transform: translateY(-3px) scale(1.05) !important; box-shadow: 0 8px 20px rgba(255, 77, 141, 0.5) !important; filter: brightness(1.15) !important; }
+
+        /* --- CHATBOT STYLES --- */
+        .chat-widget { position: fixed; bottom: 30px; right: 30px; z-index: 9999; }
+        .chat-btn { width: 60px; height: 60px; border-radius: 50%; background: var(--pink); border: none; color: white; font-size: 24px; cursor: pointer; box-shadow: 0 5px 15px rgba(255, 77, 141, 0.4); display: flex; align-items: center; justify-content: center; }
+        .chat-btn:hover { transform: scale(1.1); }
+        .chat-window { position: absolute; bottom: 80px; right: 0; width: 350px; height: 450px; background: #161621; border-radius: 10px; border: 1px solid rgba(255, 77, 141, 0.3); display: none; flex-direction: column; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .chat-header { background: var(--pink); color: white; padding: 15px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+        .close-chat { background: none; border: none; color: white; cursor: pointer; font-size: 16px; box-shadow: none !important; transform: none !important; }
+        .chat-body { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; scrollbar-width: thin; scrollbar-color: var(--pink) #0b0b13; }
+        .chat-msg { max-width: 85%; padding: 10px 15px; border-radius: 15px; font-size: 14px; line-height: 1.4; word-wrap: break-word; }
+        .chat-msg.user { align-self: flex-end; background: var(--pink); color: white; border-bottom-right-radius: 2px; }
+        .chat-msg.bot { align-self: flex-start; background: #2a2a35; color: white; border-bottom-left-radius: 2px; }
+        .chat-input { display: flex; padding: 10px; background: #0b0b13; border-top: 1px solid rgba(255,255,255,0.1); }
+        .chat-input input { flex: 1; background: transparent; border: none; color: white; padding: 10px; outline: none; font-size: 14px; }
+        .chat-input button { background: var(--pink); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; box-shadow: none !important; transform: none !important; }
+        .typing-indicator { color: #888; font-size: 12px; font-style: italic; align-self: flex-start; display: none; padding: 0 10px; }
     </style>
 </head>
 <body>
@@ -288,7 +264,7 @@ if ($result) {
 
     <nav>
         <div class="logo">Club Hub</div>
-        <div>Community | News | <a href="logout.php" style="background:var(--pink); padding:6px 15px; border-radius:20px; font-weight:bold; color:white; text-decoration:none;">Log Out</a></div>
+        <div> <a href="logout.php" style="background:var(--pink); padding:6px 15px; border-radius:20px; font-weight:bold; color:white; text-decoration:none;">Log Out</a></div>
     </nav>
 
     <div class="modal-overlay" id="detailsModal">
@@ -303,9 +279,7 @@ if ($result) {
         <div class="modal-content" id="form-container">
             <button class="close-modal" onclick="closeModals()">CLOSE</button>
             <h2 id="form-display-title" class="modal-header-centered" style="font-size: 2rem;"></h2>
-            
             <input type="hidden" id="current-event-id">
-
             <form id="submission-form" onsubmit="handleRegistration(event, 'register')">
                 <div style="display: flex; flex-wrap: wrap; gap: 20px;" id="dynamic-form-grid"></div>
                 <button type="submit" id="form-submit-btn" style="width:100%; margin-top:30px; padding:18px; border:none; color:white; font-weight:bold; cursor:pointer; border-radius:10px;">SUBMIT REGISTRATION</button>
@@ -316,14 +290,10 @@ if ($result) {
     <div class="modal-overlay" id="tktModal">
         <div class="modal-content" id="tkt-container">
             <button class="close-modal" onclick="closeModals()">CLOSE</button>
-            
             <div id="tkt-img-preview" style="width:100%; height:150px; background-size:cover; background-position:center; border-radius:10px; margin-bottom:20px; display:none;"></div>
-            
             <h2 id="tkt-display-title" class="modal-header-centered" style="font-size: 2rem; margin-bottom: 5px;"></h2>
             <p id="tkt-remaining-display" style="text-align:center; font-weight:bold; font-size:14px; margin-top:0; margin-bottom:30px;"></p>
-            
             <input type="hidden" id="current-tkt-event-id">
-
             <form id="tkt-submission-form" onsubmit="handleRegistration(event, 'ticket')">
                 <div style="display: flex; flex-wrap: wrap; gap: 20px;" id="dynamic-tkt-grid"></div>
                 <button type="submit" id="tkt-submit-btn" style="width:100%; margin-top:30px; padding:18px; border:none; color:white; font-weight:bold; cursor:pointer; border-radius:10px;">PURCHASE TICKET</button>
@@ -342,12 +312,52 @@ if ($result) {
     <section class="clubs-section" id="clubs">
         <div class="section-title">Explore Clubs</div>
         <div class="club-grid">
+            
             <button class="club-card" onclick="window.location.href='club_info_display.php?id=1'">
-                <img src="images/debate-1.png">
-                <div class="label">Debate Society</div>
+                <img src="images/debate.png">
+                <div class="label">Debate Society (NSUDC)</div>
             </button>
+
+            <button class="club-card" onclick="window.location.href='club_info_display.php?id=3'">
+                <img src="images/CDC logo.png">
+                <div class="label">Cine and Drama Club (NSUCDC)</div>
+            </button>
+
+            <button class="club-card" onclick="window.location.href='club_info_display.php?id=1'">
+                <img src="images/nsuss-logo.png">
+                <div class="label">Shangskritik Shangathan (NSUSS)</div>
+            </button>
+
+            <button class="club-card" onclick="window.location.href='club_info_display.php?id=4'">
+                <img src="images/nsuac-logo.png">
+                <div class="label">Athletics Club (NSUAC)</div>
+            </button>
+
+            <button class="club-card" onclick="window.location.href='club_info_display.php?id=5'">
+                <img src="images/nsussc-logo.jpg">
+                <div class="label">Social Services Club (NSUSSC)</div>
+            </button>
+
         </div>
     </section>
+
+    <div class="chat-widget">
+        <div class="chat-window" id="chatWindow">
+            <div class="chat-header">
+                <span>ClubHub Assistant 🤖</span>
+                <button class="close-chat" onclick="toggleChat()">✖</button>
+            </div>
+            <div class="chat-body" id="chatBody">
+                <div class="chat-msg bot">Hello! 😊 I'm your NSU Club Hub assistant. How can I help you today?</div>
+                <div class="typing-indicator" id="typingIndicator">AI is thinking...</div>
+            </div>
+            <form class="chat-input" onsubmit="handleChatSubmit(event)">
+                <input type="text" id="chatInput" placeholder="Type a message..." required autocomplete="off">
+                <button type="submit">➤</button>
+            </form>
+        </div>
+        <button class="chat-btn" onclick="toggleChat()">💬</button>
+    </div>
 
     <script>
         const contentData = <?php echo json_encode($events_for_js, JSON_UNESCAPED_UNICODE); ?>;
@@ -361,7 +371,6 @@ if ($result) {
             slide.style.backgroundPosition = `center ${item.yPos}`;
             
             let regBtn = item.showReg ? `<button onclick="openRegForm(${i})" style="background:var(--pink); border:none; color:white; padding:14px 35px; border-radius:30px; font-weight:bold; cursor:pointer; margin-right:10px;">Register</button>` : '';
-
             let tktBtn = '';
             if (item.showTkt) {
                 if (item.remainingTickets <= 0) {
@@ -377,8 +386,7 @@ if ($result) {
                     <div class="timer-container" id="timer-${i}">Ends in: --h --m --s</div>
                     <p class="description">${item.desc}</p>
                     <div style="display:flex;">
-                        ${regBtn}
-                        ${tktBtn}
+                        ${regBtn} ${tktBtn}
                         <button onclick="openDetails(${i})" style="background:rgba(255,255,255,0.1); border:1px solid white; color:white; padding:14px 35px; border-radius:30px; cursor:pointer; font-weight:bold;">View Details</button>
                     </div>
                 </div>`;
@@ -396,18 +404,12 @@ if ($result) {
                 const target = new Date(item.endTime).getTime();
                 const now = new Date().getTime();
                 const diff = target - now;
-
                 const timerEl = document.getElementById(`timer-${i}`);
-                if (diff <= 0) {
-                    timerEl.innerText = "Event Ended";
-                    return;
-                }
-
+                if (diff <= 0) { timerEl.innerText = "Event Ended"; return; }
                 const days = Math.floor(diff / (1000 * 60 * 60 * 24));
                 const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
                 const secs = Math.floor((diff % (1000 * 60)) / 1000);
-
                 let display = `Ends in: `;
                 if(days > 0) display += `${days}d `;
                 display += `${hours}h ${mins}m ${secs}s`;
@@ -429,22 +431,18 @@ if ($result) {
             const colors = item.formColors;
             const container = document.getElementById('form-container');
             const grid = document.getElementById('dynamic-form-grid');
-            
             document.getElementById('current-event-id').value = item.id;
             container.style.backgroundColor = colors.bg;
             document.getElementById('form-display-title').innerText = colors.formTitleText;
             document.getElementById('form-display-title').style.color = colors.title;
             document.getElementById('form-submit-btn').style.backgroundColor = colors.btn;
-
             grid.innerHTML = '';
-            item.form.forEach((f, fIdx) => {
+            item.form.forEach((f) => {
                 const div = document.createElement('div');
                 div.style.flex = f.isFull ? "0 0 100%" : "0 0 calc(50% - 10px)";
-                
                 let input = f.type === 'dropdown' ? 
                     `<select data-label="${f.label}" required style="background:${colors.fieldBg}; color:${colors.fieldTxt}; padding:12px; width:100%; border:1px solid rgba(0,0,0,0.1); border-radius:8px;">${f.options.split('\n').map(o => `<option>${o.trim()}</option>`).join('')}</select>` : 
                     `<input type="text" data-label="${f.label}" required style="background:${colors.fieldBg}; color:${colors.fieldTxt}; padding:12px; width:100%; border:1px solid rgba(0,0,0,0.1); border-radius:8px;">`;
-                
                 div.innerHTML = `<label style="color:${colors.label}; display:block; font-size:11px; font-weight:bold; margin-bottom:5px; text-transform:uppercase;">${f.label}</label>${input}`;
                 grid.appendChild(div);
             });
@@ -457,35 +455,22 @@ if ($result) {
             const container = document.getElementById('tkt-container');
             const grid = document.getElementById('dynamic-tkt-grid');
             const imgPreview = document.getElementById('tkt-img-preview');
-            
             document.getElementById('current-tkt-event-id').value = item.id;
             container.style.backgroundColor = colors.bg;
-            
-            if (item.ticketImg) {
-                imgPreview.style.backgroundImage = `url('${item.ticketImg}')`;
-                imgPreview.style.display = 'block';
-            } else {
-                imgPreview.style.display = 'none';
-            }
-
+            if (item.ticketImg) { imgPreview.style.backgroundImage = `url('${item.ticketImg}')`; imgPreview.style.display = 'block'; } else { imgPreview.style.display = 'none'; }
             document.getElementById('tkt-display-title').innerText = colors.formTitleText;
             document.getElementById('tkt-display-title').style.color = colors.title;
-            
             const remainingLabel = document.getElementById('tkt-remaining-display');
             remainingLabel.innerText = `${item.remainingTickets} Tickets Available`;
             remainingLabel.style.color = colors.label;
-
             document.getElementById('tkt-submit-btn').style.backgroundColor = colors.btn;
-
             grid.innerHTML = '';
-            item.ticketData.fields.forEach((f, fIdx) => {
+            item.ticketData.fields.forEach((f) => {
                 const div = document.createElement('div');
                 div.style.flex = f.isFull ? "0 0 100%" : "0 0 calc(50% - 10px)";
-                
                 let input = f.type === 'dropdown' ? 
                     `<select data-label="${f.label}" required style="background:${colors.fieldBg}; color:${colors.fieldTxt}; padding:12px; width:100%; border:1px solid rgba(0,0,0,0.1); border-radius:8px;">${f.options.split('\n').map(o => `<option>${o.trim()}</option>`).join('')}</select>` : 
                     `<input type="text" data-label="${f.label}" required style="background:${colors.fieldBg}; color:${colors.fieldTxt}; padding:12px; width:100%; border:1px solid rgba(0,0,0,0.1); border-radius:8px;">`;
-                
                 div.innerHTML = `<label style="color:${colors.label}; display:block; font-size:11px; font-weight:bold; margin-bottom:5px; text-transform:uppercase;">${f.label}</label>${input}`;
                 grid.appendChild(div);
             });
@@ -494,92 +479,38 @@ if ($result) {
 
         function handleRegistration(e, formType) {
             e.preventDefault();
-            
             const eventId = formType === 'ticket' ? document.getElementById('current-tkt-event-id').value : document.getElementById('current-event-id').value;
             const gridId = formType === 'ticket' ? '#dynamic-tkt-grid' : '#dynamic-form-grid';
-            
-            // Setup the "Sending..." visual effect
             const submitBtnId = formType === 'ticket' ? 'tkt-submit-btn' : 'form-submit-btn';
             const submitBtn = document.getElementById(submitBtnId);
             const originalBtnText = submitBtn.innerText;
-            
             submitBtn.innerText = formType === 'ticket' ? "Processing & Emailing..." : "Sending...";
             submitBtn.disabled = true;
             submitBtn.style.opacity = '0.7';
             submitBtn.style.cursor = 'wait';
-            
             const inputs = document.querySelectorAll(gridId + ' input, ' + gridId + ' select');
-            
             let data = {};
             inputs.forEach(el => { data[el.getAttribute('data-label')] = el.value; });
-
             const fd = new FormData();
             fd.append('submit_response', 'true');
             fd.append('event_id', eventId);
             fd.append('form_type', formType); 
             fd.append('response_json', JSON.stringify(data));
-
-            // Send to PHP Server
             fetch(window.location.href, { method: 'POST', body: fd })
             .then(r => r.text())
             .then(res => {
                 const toast = document.getElementById('status-toast');
                 const cleanRes = res.trim();
-
-                // ----------------------------------------------------
-                // DIAGNOSTIC POP-UP: Shows you exact PHP errors
-                // ----------------------------------------------------
-                if (cleanRes !== 'success' && cleanRes !== 'already' && cleanRes !== 'full') {
-                    alert("⚠️ PHP SERVER ERROR:\n\n" + cleanRes);
-                }
-
-                // Restore Button Visually
-                submitBtn.innerText = originalBtnText;
-                submitBtn.disabled = false;
-                submitBtn.style.opacity = '1';
-                submitBtn.style.cursor = 'pointer';
-
+                if (cleanRes !== 'success' && cleanRes !== 'already' && cleanRes !== 'full') { alert("⚠️ PHP ERROR:\n\n" + cleanRes); }
+                submitBtn.innerText = originalBtnText; submitBtn.disabled = false; submitBtn.style.opacity = '1'; submitBtn.style.cursor = 'pointer';
                 if(cleanRes === 'success') {
-                    toast.innerText = formType === 'ticket' ? "Ticket Purchased & Email Sent! ✓" : "Registration Successful! ✓";
-                    toast.style.background = "#2ecc71";
-                    toast.style.display = "block";
-                    closeModals();
-                    document.getElementById('submission-form').reset();
-                    document.getElementById('tkt-submission-form').reset();
+                    toast.innerText = formType === 'ticket' ? "Ticket Sent! ✓" : "Registered! ✓";
+                    toast.style.background = "#2ecc71"; toast.style.display = "block"; closeModals();
                     setTimeout(() => window.location.reload(), 2000); 
-                    
-                } else if (cleanRes === 'already') {
-                    toast.innerText = formType === 'ticket' ? "You already secured a ticket!" : "Already Submitted for this event!";
-                    toast.style.background = "#e67e22"; 
-                    toast.style.display = "block";
-                    closeModals();
-                } else if (cleanRes === 'full') {
-                    toast.innerText = "House Full! No tickets remaining.";
-                    toast.style.background = "#e74c3c"; 
-                    toast.style.display = "block";
-                    closeModals();
                 } else {
-                    toast.innerText = "Error processing request. Check the alert box.";
-                    toast.style.background = "#e74c3c"; 
-                    toast.style.display = "block";
+                    toast.innerText = cleanRes; toast.style.background = "#e74c3c"; toast.style.display = "block";
+                    setTimeout(() => { toast.style.display = 'none'; }, 5000);
                 }
-
-                if (cleanRes !== 'success') {
-                    setTimeout(() => { toast.style.display = 'none'; }, 6000);
-                }
-            })
-            .catch(err => {
-                submitBtn.innerText = originalBtnText;
-                submitBtn.disabled = false;
-                submitBtn.style.opacity = '1';
-                submitBtn.style.cursor = 'pointer';
-                
-                alert("⚠️ JAVASCRIPT NETWORK ERROR:\n\n" + err);
-                const toast = document.getElementById('status-toast');
-                toast.innerText = "Network Error! Please try again.";
-                toast.style.background = "#e74c3c"; 
-                toast.style.display = "block";
-                setTimeout(() => { toast.style.display = 'none'; }, 4000);
             });
         }
 
@@ -592,16 +523,58 @@ if ($result) {
         let currentIdx = 0;
         const slides = document.querySelectorAll('.slide');
         const minis = document.querySelectorAll('.mini-card');
-
         function jumpToSlide(n) {
-            slides[currentIdx].classList.remove('active');
-            minis[currentIdx].classList.remove('active');
-            currentIdx = n;
-            slides[currentIdx].classList.add('active');
-            minis[currentIdx].classList.add('active');
+            slides[currentIdx].classList.remove('active'); minis[currentIdx].classList.remove('active');
+            currentIdx = n; slides[currentIdx].classList.add('active'); minis[currentIdx].classList.add('active');
+        }
+        setInterval(() => jumpToSlide((currentIdx + 1) % slides.length), 5000);
+
+        // --- CHATBOT SESSIONS & CACHE ---
+        const tabSessionId = "tab_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5);
+
+        function toggleChat() {
+            const chatWin = document.getElementById('chatWindow');
+            chatWin.style.display = chatWin.style.display === 'flex' ? 'none' : 'flex';
         }
 
-        let autoPlay = setInterval(() => jumpToSlide((currentIdx + 1) % slides.length), 5000);
+        function appendMessage(text, sender) {
+            const chatBody = document.getElementById('chatBody');
+            const typingInd = document.getElementById('typingIndicator');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `chat-msg ${sender}`;
+            msgDiv.innerText = text;
+            chatBody.insertBefore(msgDiv, typingInd);
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+
+        async function handleChatSubmit(e) {
+            e.preventDefault();
+            const inputField = document.getElementById('chatInput');
+            const message = inputField.value.trim();
+            if (!message) return;
+
+            appendMessage(message, 'user');
+            inputField.value = '';
+            document.getElementById('typingIndicator').style.display = 'block';
+            document.getElementById('chatBody').scrollTop = document.getElementById('chatBody').scrollHeight;
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        message: message,
+                        session_id: tabSessionId 
+                    })
+                });
+                const data = await response.json();
+                document.getElementById('typingIndicator').style.display = 'none';
+                appendMessage(data.answer || "Sorry, I'm having trouble thinking.", 'bot');
+            } catch (err) {
+                document.getElementById('typingIndicator').style.display = 'none';
+                appendMessage("AI server is offline. Run 'python app.py'.", 'bot');
+            }
+        }
     </script>
 </body>
 </html>
