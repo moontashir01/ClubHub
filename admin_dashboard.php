@@ -19,6 +19,71 @@ if ($adminRole === 'Student Affairs') {
 
 $initial = strtoupper(substr($name, 0, 1));
 
+$flash = $_GET['msg'] ?? '';
+$flash_type = $_GET['type'] ?? 'success';
+$allowed_flash = ['success', 'error', 'warning'];
+if (!in_array($flash_type, $allowed_flash, true)) {
+    $flash_type = 'success';
+}
+
+function redirect_with_admin_msg($msg, $type = 'success') {
+    header("Location: admin_dashboard.php?msg=" . urlencode($msg) . "&type=" . urlencode($type));
+    exit();
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = $_POST['action'] ?? '';
+
+    if ($action === 'create_admin_event') {
+        $event_name = trim($_POST['admin_event_name'] ?? '');
+        $event_date_raw = trim($_POST['admin_event_date'] ?? '');
+        $event_timestamp = strtotime($event_date_raw);
+
+        if ($event_name === '' || !$event_timestamp) {
+            redirect_with_admin_msg('Please enter a valid event name and date/time.', 'error');
+        }
+
+        $event_date = date('Y-m-d H:i:s', $event_timestamp);
+        $event_availability = 1;
+        $clearance = 'Approved';
+
+        $stmt = $con->prepare("
+            INSERT INTO events (
+                club_id, event_name, event_date, event_creator, event_availablity, security_clearance, admin_clearance
+            ) VALUES (
+                NULL, ?, ?, ?, ?, ?, ?
+            )
+        ");
+
+        if (!$stmt) {
+            redirect_with_admin_msg('Failed to prepare event creation query.', 'error');
+        }
+
+        $event_creator = 'Admin';
+        $stmt->bind_param("sssiss", $event_name, $event_date, $event_creator, $event_availability, $clearance, $clearance);
+        if ($stmt->execute()) {
+            redirect_with_admin_msg('Admin event created successfully.');
+        }
+
+        // Fallback for databases that still enforce event_creator -> clubs.club_name foreign key
+        $fallback_stmt = $con->prepare("
+            INSERT INTO events (
+                club_id, event_name, event_date, event_creator, event_availablity, security_clearance, admin_clearance
+            ) VALUES (
+                NULL, ?, ?, NULL, ?, ?, ?
+            )
+        ");
+        if ($fallback_stmt) {
+            $fallback_stmt->bind_param("ssiss", $event_name, $event_date, $event_availability, $clearance, $clearance);
+            if ($fallback_stmt->execute()) {
+                redirect_with_admin_msg('Admin event created successfully.');
+            }
+        }
+
+        redirect_with_admin_msg('Failed to create event. Please check database constraints.', 'error');
+    }
+}
+
 $totalClubs = 0;
 $queryClubs = "SELECT COUNT(*) as count FROM clubs"; 
 $resultClubs = @mysqli_query($con, $queryClubs);
@@ -81,6 +146,10 @@ if ($resultVolunteers) {
         
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
         .date-display { color: var(--muted); font-size: 0.9rem; background: var(--surface); padding: 10px 20px; border-radius: 20px; border: 1px solid var(--border); }
+        .banner { padding: 12px 18px; border-radius: 12px; margin-bottom: 20px; border: 1px solid transparent; font-weight: 600; }
+        .banner.success { background: rgba(74, 222, 128, 0.15); color: #4ade80; border-color: rgba(74, 222, 128, 0.4); }
+        .banner.error { background: rgba(248, 113, 113, 0.12); color: #f87171; border-color: rgba(248, 113, 113, 0.4); }
+        .banner.warning { background: rgba(251, 191, 36, 0.12); color: #fbbf24; border-color: rgba(251, 191, 36, 0.4); }
 
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 40px; }
         .stat-card { background: var(--surface); border: 1px solid var(--border); padding: 25px; border-radius: 20px; position: relative; overflow: hidden; display: flex; align-items: center; gap: 20px; }
@@ -225,6 +294,10 @@ if ($resultVolunteers) {
             </div>
         </div>
 
+        <?php if ($flash): ?>
+            <div class="banner <?php echo htmlspecialchars($flash_type); ?>"><?php echo htmlspecialchars($flash); ?></div>
+        <?php endif; ?>
+
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-icon">📚</div>
@@ -252,6 +325,11 @@ if ($resultVolunteers) {
         <h2 style="font-size: 1.2rem; color: var(--muted); margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">Administrative Modules</h2>
         
         <div class="action-grid" id="dashboard-grid">
+            <div class="action-card" onclick="openCreateEventModal()">
+                <div class="card-icon">📅</div>
+                <h3>Create Event</h3>
+                <p>Create an admin event</p>
+            </div>
             <div class="action-card" onclick="window.location.href='reqVolunteer.php'">
                 <div class="card-icon">🙋‍♂️</div>
                 <h3>Request Volunteers</h3>
@@ -259,6 +337,25 @@ if ($resultVolunteers) {
             </div>
         </div>
     </main>
+
+    <div class="modal-overlay" id="create-event-modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeCreateEventModal()">&times;</button>
+            <h2 class="modal-title">Create Event</h2>
+            <form method="post">
+                <input type="hidden" name="action" value="create_admin_event">
+                <div class="admin-form-group">
+                    <label for="admin-event-name">Event Name</label>
+                    <input id="admin-event-name" class="admin-input" type="text" name="admin_event_name" required>
+                </div>
+                <div class="admin-form-group">
+                    <label for="admin-event-date">Event Date and Time</label>
+                    <input id="admin-event-date" class="admin-input" type="datetime-local" name="admin_event_date" required>
+                </div>
+                <button type="submit" class="submit-btn">Create Event</button>
+            </form>
+        </div>
+    </div>
 
     <div class="modal-overlay" id="modal-overlay">
         <div class="modal-content">
@@ -384,10 +481,22 @@ if ($resultVolunteers) {
             document.getElementById('modal-overlay').style.display = 'none';
         }
 
+        function openCreateEventModal() {
+            document.getElementById('create-event-modal').style.display = 'flex';
+        }
+
+        function closeCreateEventModal() {
+            document.getElementById('create-event-modal').style.display = 'none';
+        }
+
         window.onclick = function(event) {
             const overlay = document.getElementById('modal-overlay');
+            const createEventOverlay = document.getElementById('create-event-modal');
             if (event.target == overlay) {
                 closeModal();
+            }
+            if (event.target == createEventOverlay) {
+                closeCreateEventModal();
             }
         }
 

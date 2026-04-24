@@ -93,3 +93,36 @@ ALTER TABLE `volunteer_requests`
 ADD CONSTRAINT `fk_vr_student` FOREIGN KEY (`student_id`) REFERENCES `students`(`student_id`) ON DELETE CASCADE,
 ADD CONSTRAINT `fk_vr_event` FOREIGN KEY (`event_id`) REFERENCES `events`(`event_id`) ON DELETE CASCADE,
 ADD CONSTRAINT `fk_vr_club` FOREIGN KEY (`club_id`) REFERENCES `clubs`(`club_id`) ON DELETE CASCADE;
+
+-- --------------------------------------------------------
+-- Admin-created event support for volunteer flow
+-- (moved from club_hub_final.sql)
+-- --------------------------------------------------------
+
+-- 1) Drop event_creator FK so admin events can use 'Admin' (or NULL) as creator
+SET @fk_exists := (
+  SELECT COUNT(*)
+  FROM information_schema.TABLE_CONSTRAINTS
+  WHERE CONSTRAINT_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'events'
+    AND CONSTRAINT_NAME = 'events_ibfk_1'
+);
+SET @drop_fk_sql := IF(@fk_exists > 0,
+  'ALTER TABLE `events` DROP FOREIGN KEY `events_ibfk_1`',
+  'SELECT \"events_ibfk_1 not found; skipping\"'
+);
+PREPARE stmt_drop_fk FROM @drop_fk_sql;
+EXECUTE stmt_drop_fk;
+DEALLOCATE PREPARE stmt_drop_fk;
+
+-- 2) Seed one admin event (safe/idempotent)
+INSERT INTO `events`
+(`club_id`, `event_name`, `event_duration`, `event_date`, `event_creator`, `event_availablity`, `security_clearance`, `admin_clearance`, `security_message`)
+SELECT
+  NULL, 'Admin Orientation Support', 3.00, '2026-05-05 10:00:00', 'Admin', 1, 'Approved', 'Approved', NULL
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM `events`
+  WHERE `event_name` = 'Admin Orientation Support'
+    AND `event_date` = '2026-05-05 10:00:00'
+);

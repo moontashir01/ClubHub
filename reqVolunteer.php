@@ -23,7 +23,14 @@ if (!$table_check || mysqli_num_rows($table_check) === 0) {
 }
 
 $events = [];
-$event_query = @mysqli_query($con, "SELECT event_id, event_name, event_date, event_creator FROM events WHERE event_availablity = 1 AND event_creator = 'admin' ORDER BY event_date DESC");
+$event_query = @mysqli_query(
+    $con,
+    "SELECT event_id, event_name, event_date, event_creator
+     FROM events
+     WHERE event_availablity = 1
+       AND (club_id IS NULL OR LOWER(COALESCE(event_creator, '')) = 'admin')
+     ORDER BY event_date DESC"
+);
 if ($event_query) {
     while ($row = mysqli_fetch_assoc($event_query)) {
         $events[] = $row;
@@ -45,6 +52,15 @@ if (isset($_GET['event_id'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $selected_event_id = intval($_POST['event_id'] ?? 0);
 }
+
+$event_ids = array_map(static function ($ev) {
+    return intval($ev['event_id']);
+}, $events);
+
+if ($selected_event_id && !in_array($selected_event_id, $event_ids, true)) {
+    $selected_event_id = 0;
+}
+
 if (!$selected_event_id && !empty($events)) {
     $selected_event_id = intval($events[0]['event_id']);
 }
@@ -93,6 +109,7 @@ function sync_request_statuses(mysqli $con, int $event_id): void {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
+
     if (!$selected_event_id) {
         $flash = 'Please select an event to continue.';
         $flash_type = 'error';
@@ -544,11 +561,11 @@ if ($selected_event_id) {
         <div class="panel-grid">
             <section class="panel">
                 <h2>Request Builder</h2>
-                <p class="subtext">Pick an active event and set volunteer counts per club.</p>
+                <p class="subtext">Pick an admin-created active event and set volunteer counts per club.</p>
 
                 <form method="post" id="request-form" data-event="<?php echo $selected_event_id; ?>">
                     <div class="admin-form-group">
-                        <label for="event_id">Select Event</label>
+                        <label for="event_id" style="margin:0;">Select Event</label>
                         <select class="admin-input" name="event_id" id="event_id" required>
                             <option value="">-- Choose Event --</option>
                             <?php foreach ($events as $ev): ?>

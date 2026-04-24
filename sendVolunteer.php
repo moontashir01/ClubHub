@@ -71,7 +71,8 @@ if ($club_id) {
         FROM volunteer_request_club r
         INNER JOIN events e ON e.event_id = r.event_id
         WHERE r.club_id = ?
-          AND e.event_creator = 'admin'
+          AND e.event_availablity = 1
+          AND (e.club_id IS NULL OR LOWER(COALESCE(e.event_creator, '')) = 'admin')
           AND LOWER(COALESCE(r.status, '')) <> 'cancelled'
         ORDER BY e.event_date DESC
     ");
@@ -90,6 +91,13 @@ if (isset($_GET['event_id'])) {
     $selected_event_id = intval($event_requests[0]['event_id']);
 }
 
+$event_ids = array_map(static function ($req) {
+    return intval($req['event_id']);
+}, $event_requests);
+if ($selected_event_id && !in_array($selected_event_id, $event_ids, true)) {
+    $selected_event_id = !empty($event_requests) ? intval($event_requests[0]['event_id']) : 0;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $selected_event_id = intval($_POST['event_id'] ?? 0);
     $member_ids = $_POST['member_ids'] ?? [];
@@ -99,6 +107,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!$club_id) {
         $flash = 'No club found for this account.';
+        $flash_type = 'error';
+    } elseif ($selected_event_id && !in_array($selected_event_id, $event_ids, true)) {
+        $flash = 'Invalid event selection.';
         $flash_type = 'error';
     } elseif (!$selected_event_id) {
         $flash = 'Please select an event to continue.';
@@ -191,7 +202,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if ($added > 0) {
                 // Notify admin that this club sent volunteers
-                $eventNameForNotif = $selected_request ? $selected_request['event_name'] : 'an event';
+                $eventNameForNotif = 'an event';
+                foreach ($event_requests as $requested_event) {
+                    if (intval($requested_event['event_id']) === $selected_event_id) {
+                        $eventNameForNotif = $requested_event['event_name'];
+                        break;
+                    }
+                }
                 notifyAdmin(
                     $con,
                     "🚀 " . $club_name . " has sent $added volunteer(s) for \"" . $eventNameForNotif . "\".",
@@ -275,6 +292,8 @@ if ($club_id && $selected_event_id) {
         .input-label { font-size: 0.85rem; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; display: block; }
         .input-control { width: 100%; padding: 12px 14px; border-radius: 8px; border: 1px solid #2a2a38; background: var(--card); color: var(--text); }
         .action-btn { background: var(--pink); color: white; border: none; padding: 12px 18px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+        .back-btn { display: inline-block; margin-bottom: 18px; text-decoration: none; background: transparent; color: var(--text); border: 1px solid #2a2a38; padding: 10px 14px; border-radius: 8px; font-weight: 700; }
+        .back-btn:hover { border-color: var(--pink); color: var(--pink); }
         .member-table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 12px; overflow: hidden; }
         .member-table th, .member-table td { padding: 12px 14px; border-bottom: 1px solid #252533; text-align: left; font-size: 0.92rem; }
         .member-table th { color: var(--pink); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 1px; }
@@ -304,6 +323,7 @@ if ($club_id && $selected_event_id) {
     </nav>
 
     <div class="page-wrap">
+        <a class="back-btn" href="Club_dashboard.php">← Back to Dashboard</a>
         <div class="page-title">Send Volunteers</div>
         <div class="page-sub">Manage volunteer responses for <?php echo htmlspecialchars($club_name); ?>. Select an event request and choose members to send.</div>
 

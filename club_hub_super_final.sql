@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Apr 24, 2026 at 11:49 PM
+-- Generation Time: Apr 25, 2026 at 12:16 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -109,7 +109,9 @@ CREATE TABLE `events` (
 
 INSERT INTO `events` (`event_id`, `club_id`, `event_name`, `event_duration`, `event_date`, `event_creator`, `event_availablity`, `security_clearance`, `admin_clearance`, `security_message`) VALUES
 (1, 1, 'Boshonto Utshob 2026', 7.50, '2026-02-25 08:00:00', 'NSUSS', 0, 'Rejected', 'Pending', 'For Some Reason :))'),
-(2, 1, 'Excelsor', 2.50, '2026-02-27 13:00:00', 'NSUSS', 1, 'Approved', 'Pending', NULL);
+(2, 1, 'Excelsor', 2.50, '2026-02-27 13:00:00', 'NSUSS', 1, 'Approved', 'Pending', NULL),
+(3, NULL, 'Admin Orientation Support', 3.00, '2026-05-05 10:00:00', 'Admin', 1, 'Approved', 'Approved', NULL),
+(4, NULL, 'Admission Test 2026', NULL, '2026-05-01 08:00:00', 'Admin', 1, 'Approved', 'Approved', NULL);
 
 -- --------------------------------------------------------
 
@@ -176,7 +178,9 @@ CREATE TABLE `notifications` (
 INSERT INTO `notifications` (`notification_id`, `recipient_type`, `recipient_id`, `message`, `link`, `is_read`, `created_at`) VALUES
 (1, 'club', '1', '✅ Security Clearance Approved for \"Excelsor\".', 'eventlogs.php', 1, '2026-04-24 18:07:15'),
 (2, 'club', '1', '❌ Security Clearance Rejected for \"Boshonto Utshob 2026\". Reason: For Some Reason :))', 'eventlogs.php', 1, '2026-04-24 18:08:48'),
-(3, 'club', '1', '✅ Security Clearance Approved for \"Excelsor\".', 'eventlogs.php', 1, '2026-04-24 18:28:04');
+(3, 'club', '1', '✅ Security Clearance Approved for \"Excelsor\".', 'eventlogs.php', 1, '2026-04-24 18:28:04'),
+(4, 'club', '1', '🙋 Admin has requested 10 volunteer(s) for \"Admission Test 2026\".', 'sendVolunteer.php', 1, '2026-04-24 22:09:54'),
+(5, 'admin', 'all', '🚀 NSUSS has sent 2 volunteer(s) for \"Admission Test 2026\".', 'reqVolunteer.php?event_id=4', 0, '2026-04-24 22:11:33');
 
 -- --------------------------------------------------------
 
@@ -308,6 +312,14 @@ CREATE TABLE `volunteer_requests` (
   `event_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `volunteer_requests`
+--
+
+INSERT INTO `volunteer_requests` (`req_ID`, `club_id`, `full_name`, `student_id`, `student_email`, `event_id`) VALUES
+(1, 1, 'Moontashir Azim', '2233440642', 'moontashir.azim@northsouth.edu', 4),
+(2, 1, 'Ridwanul Hoque', '2231446042', 'ridwanul.hoque01@northsouth.edu', 4);
+
 -- --------------------------------------------------------
 
 --
@@ -323,6 +335,13 @@ CREATE TABLE `volunteer_request_club` (
   `status` varchar(50) DEFAULT 'Open',
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `volunteer_request_club`
+--
+
+INSERT INTO `volunteer_request_club` (`event_id`, `club_id`, `requested_count`, `note`, `deadline`, `status`, `updated_at`) VALUES
+(4, 1, 10, 'Wear Formal', '2026-04-30', 'In Progress', '2026-04-24 22:15:27');
 
 --
 -- Indexes for dumped tables
@@ -454,7 +473,7 @@ ALTER TABLE `club_role_definitions`
 -- AUTO_INCREMENT for table `events`
 --
 ALTER TABLE `events`
-  MODIFY `event_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `event_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `forms_responses`
@@ -466,7 +485,7 @@ ALTER TABLE `forms_responses`
 -- AUTO_INCREMENT for table `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `rooms`
@@ -490,7 +509,7 @@ ALTER TABLE `space_bookings`
 -- AUTO_INCREMENT for table `volunteer_requests`
 --
 ALTER TABLE `volunteer_requests`
-  MODIFY `req_ID` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `req_ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- Constraints for dumped tables
@@ -513,7 +532,6 @@ ALTER TABLE `club_role_definitions`
 -- Constraints for table `events`
 --
 ALTER TABLE `events`
-  ADD CONSTRAINT `events_ibfk_1` FOREIGN KEY (`event_creator`) REFERENCES `clubs` (`club_name`),
   ADD CONSTRAINT `fk_club_event` FOREIGN KEY (`club_id`) REFERENCES `clubs` (`club_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
