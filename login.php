@@ -80,7 +80,7 @@
                   header("Location: Club_dashboard.php");
               } 
               elseif ($auth_result === 'student'){
-                  header("Location: User_dashboard.php"); 
+                  header("Location: User_dashboard_.php"); 
               }
               elseif ($auth_result === 'unverified') {
                   // Generate new OTP
