@@ -113,7 +113,9 @@ $name = $_SESSION['Name'] ?? 'Guest';
             { title: 'View Members', icon: '👥', desc: 'View Club Members', link: 'manage_members.php' },
             { title: 'Send Volunteers', icon: '🚀', desc: 'Dispatch members for events.', link: 'sendVolunteer.php', badge: <?php echo $pendingCount; ?> },
             { title: 'Add Members', icon: '➕', desc: 'Register new members.', link: 'manage_members.php' },
-            { title: 'Event Logs', icon: '📝', desc: 'Review past and upcoming activities.', link: 'eventlogs.php' }
+            { title: 'Event Logs', icon: '📝', desc: 'Review past and upcoming activities.', link: 'eventlogs.php' },
+            { title: 'Space Booking', icon: '🏢', desc: 'Reserve room/venue.', link: 'space_booking.php' },
+            { title: 'Event Slider', icon: '🎨', desc: 'Customize event slider.', link: 'event_studio.php' }
         ];
 
         

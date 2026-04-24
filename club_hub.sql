@@ -30,12 +30,7 @@ SET time_zone = "+00:00";
 CREATE TABLE `clubs` (
   `club_id` int(11) NOT NULL,
   `club_name` varchar(255) NOT NULL,
-<<<<<<< HEAD:club_hub.sql
-  PRIMARY KEY (`club_id`),
-  UNIQUE KEY `club_name` (`club_name`)
-=======
   `club_data` longtext DEFAULT NULL
->>>>>>> 8df03e9327c092e315f46f49b195ddaca60166cf:club_hub (1).sql
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -49,21 +44,6 @@ INSERT INTO `clubs` (`club_id`, `club_name`, `club_data`) VALUES
 
 -- --------------------------------------------------------
 
---
--- Table structure for table `club_role_definitions`
---
-
-CREATE TABLE `club_role_definitions` (
-  `role_id` int(11) NOT NULL AUTO_INCREMENT,
-  `club_id` int(11) NOT NULL,
-  `role_name` varchar(100) NOT NULL,
-  `is_active` tinyint(1) NOT NULL DEFAULT 1,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`role_id`),
-  UNIQUE KEY `uniq_club_role` (`club_id`, `role_name`),
-  KEY `idx_club_role_active` (`club_id`, `is_active`),
-  CONSTRAINT `fk_role_definition_club` FOREIGN KEY (`club_id`) REFERENCES `clubs` (`club_id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -129,15 +109,7 @@ CREATE TABLE `events` (
   `event_duration` decimal(4,2) DEFAULT NULL,
   `event_date` datetime DEFAULT NULL,
   `event_creator` varchar(255) DEFAULT NULL,
-<<<<<<< HEAD:club_hub.sql
-  `event_created_by` varchar(20) NOT NULL DEFAULT 'club',
-  `event_availablity` tinyint(1) DEFAULT NULL,
-  `security_clearance` varchar(20) DEFAULT 'Pending',
-  `admin_clearance` varchar(20) DEFAULT 'Pending',
-  `clearance_status` varchar(20) DEFAULT 'Draft'
-=======
   `event_availablity` tinyint(1) DEFAULT NULL
->>>>>>> 8df03e9327c092e315f46f49b195ddaca60166cf:club_hub (1).sql
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -485,34 +457,8 @@ ALTER TABLE `space_bookings`
 --
 ALTER TABLE `students`
   ADD CONSTRAINT `fk_student_user_email` FOREIGN KEY (`student_email`) REFERENCES `user` (`email`) ON DELETE CASCADE ON UPDATE CASCADE;
-<<<<<<< HEAD:club_hub.sql
-
---
--- Constraints for table `volunteer_requests`
---
-ALTER TABLE `volunteer_requests`
-  ADD CONSTRAINT `fk_vr_event` FOREIGN KEY (`event_id`) REFERENCES `events` (`event_id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_vr_club` FOREIGN KEY (`club_id`) REFERENCES `clubs` (`club_id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_vr_student` FOREIGN KEY (`student_id`) REFERENCES `students` (`student_id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Constraints for table `volunteer_request_club`
---
-ALTER TABLE `volunteer_request_club`
-  ADD CONSTRAINT `fk_vrc_event` FOREIGN KEY (`event_id`) REFERENCES `events` (`event_id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_vrc_club` FOREIGN KEY (`club_id`) REFERENCES `clubs` (`club_id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- Adding columns for OTP-based password reset
-ALTER TABLE user
-ADD COLUMN reset_otp VARCHAR(6) DEFAULT NULL;
-
-
 COMMIT;
 
-=======
-COMMIT;
-
->>>>>>> 8df03e9327c092e315f46f49b195ddaca60166cf:club_hub (1).sql
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
