@@ -15,7 +15,8 @@ ADD COLUMN `club_id` int(11) DEFAULT NULL AFTER `req_ID`;
 -- --------------------------------------------------------
 ALTER TABLE `events`
 ADD COLUMN `security_clearance` varchar(50) DEFAULT 'Pending' AFTER `event_availablity`,
-ADD COLUMN `security_message` text DEFAULT NULL AFTER `security_clearance`;
+ADD COLUMN `admin_clearance` varchar(50) DEFAULT 'Pending' AFTER `security_clearance`,
+ADD COLUMN `security_message` text DEFAULT NULL AFTER `admin_clearance`;
 
 -- --------------------------------------------------------
 -- Create volunteer_request_club table

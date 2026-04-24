@@ -12,6 +12,12 @@ if ($messageColumnCheck && mysqli_num_rows($messageColumnCheck) > 0) {
     $hasSecurityMessage = true;
 }
 
+$adminColumnCheck = mysqli_query($con, "SHOW COLUMNS FROM events LIKE 'admin_clearance'");
+$hasAdminClearance = ($adminColumnCheck && mysqli_num_rows($adminColumnCheck) > 0);
+
+$securityColumnCheck = mysqli_query($con, "SHOW COLUMNS FROM events LIKE 'security_clearance'");
+$hasSecurityClearance = ($securityColumnCheck && mysqli_num_rows($securityColumnCheck) > 0);
+
 if ($clubId <= 0) {
     $clubStmt = $con->prepare("\n        SELECT c.club_id, c.club_name\n        FROM `user` u\n        INNER JOIN students s ON s.student_email = u.email\n        INNER JOIN club_members cm ON cm.student_id = s.student_id AND cm.active = 1\n        INNER JOIN clubs c ON c.club_id = cm.club_id\n        WHERE u.email = ?\n          AND UPPER(cm.Role) LIKE 'EB%'\n        LIMIT 1\n    ");
     $clubStmt->bind_param("s", $email);
@@ -36,13 +42,16 @@ if ($clubId > 0 && $clubName === '') {
 $events = [];
 if ($clubId > 0) {
     $messageSelect = $hasSecurityMessage ? "e.security_message" : "NULL AS security_message";
+    $adminSelect = $hasAdminClearance ? "e.admin_clearance" : "'Pending' AS admin_clearance";
+    $securitySelect = $hasSecurityClearance ? "e.security_clearance" : "'Pending' AS security_clearance";
+    
     $eventsSql = "
         SELECT
             e.event_id,
             e.event_name,
             e.event_date,
-            e.security_clearance,
-            e.admin_clearance,
+            $securitySelect,
+            $adminSelect,
             e.event_availablity,
             $messageSelect
         FROM events e
