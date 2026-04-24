@@ -6,6 +6,7 @@ include 'connection.php';
 
 $email = $_SESSION['Email'] ?? '';
 $name = $_SESSION['Name'] ?? 'Guest';
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -84,7 +85,7 @@ $name = $_SESSION['Name'] ?? 'Guest';
     $row = mysqli_fetch_assoc($query);
     $clubName = $row ? $row['club_name'] : "No Club Found";
     $clubId = $row ? intval($row['club_id']) : 0;
-
+    $_SESSION['club_id'] = $clubId;
     $pendingCount = 0;
     if ($clubId) {
         $pendingQuery = mysqli_query($con, "
