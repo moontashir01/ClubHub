@@ -250,7 +250,10 @@ CREATE TABLE `user` (
   `Name` varchar(100) NOT NULL,
   `Password` varchar(255) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `portal` varchar(255) DEFAULT 'student'
+  `portal` varchar(255) DEFAULT 'student',
+  `otp_code` varchar(6) DEFAULT NULL,
+  `otp_expiry` datetime DEFAULT NULL,
+  `is_verified` tinyint(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
