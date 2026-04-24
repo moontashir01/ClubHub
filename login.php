@@ -83,6 +83,18 @@
                   header("Location: User_dashboard.php"); 
               }
               elseif ($auth_result === 'unverified') {
+                  // Generate new OTP
+                  $otp = sprintf("%06d", mt_rand(1, 999999));
+                  $otp_expiry = date("Y-m-d H:i:s", strtotime('+5 minutes'));
+                  
+                  // Update DB with new OTP
+                  $stmt = $con->prepare("UPDATE user SET otp_code = ?, otp_expiry = ? WHERE email = ?");
+                  $stmt->bind_param("sss", $otp, $otp_expiry, $email);
+                  if ($stmt->execute()) {
+                      include_once 'mailer.php';
+                      sendVerificationEmail($email, $otp, 'verification');
+                  }
+                  
                   header("Location: verify.php?email=" . urlencode($email));
               }
               exit();
