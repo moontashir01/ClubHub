@@ -1,6 +1,7 @@
 <?php
 session_start();
 include 'connection.php';
+require_once 'notification_helpers.php';
 
 
 
@@ -40,6 +41,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $approveStmt->bind_param("i", $eventId);
             $approveStmt->execute();
             $flash = "Event approved successfully.";
+
+            // Notify the club that their event was approved
+            $eventInfoStmt = $con->prepare("SELECT e.event_name, e.club_id FROM events e WHERE e.event_id = ?");
+            if ($eventInfoStmt) {
+                $eventInfoStmt->bind_param("i", $eventId);
+                $eventInfoStmt->execute();
+                $eventInfo = $eventInfoStmt->get_result()->fetch_assoc();
+                if ($eventInfo && $eventInfo['club_id']) {
+                    notifyClub(
+                        $con,
+                        intval($eventInfo['club_id']),
+                        "✅ Security Clearance Approved for \"" . $eventInfo['event_name'] . "\".",
+                        'eventlogs.php'
+                    );
+                }
+                $eventInfoStmt->close();
+            }
         } else {
             if ($rejectReason === '') {
                 $flash = "Rejection reason is required.";
@@ -57,6 +75,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $rejectStmt->execute();
             $flash = "Event rejected successfully.";
             $flashType = 'warning';
+
+            // Notify the club that their event was rejected
+            $eventInfoStmt = $con->prepare("SELECT e.event_name, e.club_id FROM events e WHERE e.event_id = ?");
+            if ($eventInfoStmt) {
+                $eventInfoStmt->bind_param("i", $eventId);
+                $eventInfoStmt->execute();
+                $eventInfo = $eventInfoStmt->get_result()->fetch_assoc();
+                if ($eventInfo && $eventInfo['club_id']) {
+                    notifyClub(
+                        $con,
+                        intval($eventInfo['club_id']),
+                        "❌ Security Clearance Rejected for \"" . $eventInfo['event_name'] . "\". Reason: " . $rejectReason,
+                        'eventlogs.php'
+                    );
+                }
+                $eventInfoStmt->close();
+            }
             }
         }
     } else {

@@ -2,6 +2,7 @@
 // ... [KEEP YOUR EXISTING PHP HEADER EXACTLY AS IT IS] ...
 session_start();
 include 'connection.php';
+require_once 'notification_helpers.php';
 mysqli_set_charset($con, "utf8mb4");
 
 if (!isset($_SESSION['club_id'])) {
@@ -63,7 +64,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_trigger'])) {
             ON DUPLICATE KEY UPDATE 
             config_name = VALUES(config_name), config_data = VALUES(config_data), slider_endtime = VALUES(slider_endtime)";
 
-    if (mysqli_query($con, $sql)) { echo "Success! Configuration Saved."; } 
+    if (mysqli_query($con, $sql)) {
+        // Notify admin that a club has configured an event (needs security clearance)
+        $eventNameNotif = $_POST['name'] ?? 'an event';
+        $clubIdNotif = intval($club_id);
+        $clubNameStmt = $con->prepare("SELECT club_name FROM clubs WHERE club_id = ? LIMIT 1");
+        $clubNameForNotif = 'A club';
+        if ($clubNameStmt) {
+            $clubNameStmt->bind_param("i", $clubIdNotif);
+            $clubNameStmt->execute();
+            $clubNameRow = $clubNameStmt->get_result()->fetch_assoc();
+            if ($clubNameRow) $clubNameForNotif = $clubNameRow['club_name'];
+            $clubNameStmt->close();
+        }
+        notifyAdmin(
+            $con,
+            "🎪 " . $clubNameForNotif . " has configured event \"" . $eventNameNotif . "\" — security clearance pending.",
+            'securityapproval.php'
+        );
+
+        echo "Success! Configuration Saved.";
+    } 
     else { echo "Database Error: " . mysqli_error($con); }
     exit; 
 }

@@ -1,6 +1,7 @@
 <?php
 session_start();
 include 'connection.php';
+require_once 'notification_helpers.php';
 
 
 
@@ -189,6 +190,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             sync_single_request_status($con, $selected_event_id, $club_id);
 
             if ($added > 0) {
+                // Notify admin that this club sent volunteers
+                $eventNameForNotif = $selected_request ? $selected_request['event_name'] : 'an event';
+                notifyAdmin(
+                    $con,
+                    "🚀 " . $club_name . " has sent $added volunteer(s) for \"" . $eventNameForNotif . "\".",
+                    'reqVolunteer.php?event_id=' . $selected_event_id
+                );
                 redirect_with_msg($selected_event_id, "Sent $added volunteer(s) for this event.");
             } else {
                 redirect_with_msg($selected_event_id, "No new volunteers were added. Selected member(s) may already be assigned.", 'warning');

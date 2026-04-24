@@ -116,6 +116,64 @@ if ($resultVolunteers) {
         .admin-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(255, 71, 126, 0.2); }
         .submit-btn { width: 100%; background: var(--primary); border: none; padding: 15px; border-radius: 10px; color: white; font-weight: bold; font-size: 1rem; cursor: pointer; transition: 0.3s; margin-top: 10px; }
         .submit-btn:hover { background: #e63e70; box-shadow: 0 5px 15px var(--primary-glow); transform: translateY(-2px); }
+
+        /* === NOTIFICATION BELL === */
+        .notif-wrapper { position: relative; }
+        .notif-bell {
+            background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+            width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; position: relative; transition: all 0.3s ease; font-size: 1.3rem;
+        }
+        .notif-bell:hover { border-color: var(--primary); background: var(--surface-hover); transform: scale(1.08); }
+        .notif-badge {
+            position: absolute; top: -5px; right: -5px;
+            background: var(--primary); color: white; font-size: 0.65rem; font-weight: 800;
+            min-width: 18px; height: 18px; border-radius: 99px;
+            display: none; align-items: center; justify-content: center;
+            padding: 0 4px; box-shadow: 0 2px 8px var(--primary-glow);
+            animation: badgePulse 2s ease-in-out infinite;
+        }
+        .notif-badge.visible { display: flex; }
+        @keyframes badgePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+        .notif-dropdown {
+            position: absolute; top: calc(100% + 12px); right: 0;
+            width: 380px; max-height: 440px; overflow-y: auto;
+            background: rgba(19, 20, 31, 0.95); backdrop-filter: blur(20px);
+            border: 1px solid var(--border); border-radius: 18px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            display: none; z-index: 500;
+        }
+        .notif-dropdown.open { display: block; animation: dropIn 0.25s ease-out; }
+        @keyframes dropIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .notif-header {
+            padding: 16px 20px; border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .notif-header h4 { margin: 0; font-size: 0.95rem; color: var(--text); }
+        .notif-mark-read {
+            background: none; border: none; color: var(--primary); font-size: 0.78rem;
+            cursor: pointer; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .notif-mark-read:hover { text-decoration: underline; }
+        .notif-list { padding: 6px 0; }
+        .notif-item {
+            padding: 14px 20px; display: flex; gap: 12px; align-items: flex-start;
+            transition: background 0.2s; cursor: pointer; border-left: 3px solid transparent;
+        }
+        .notif-item:hover { background: rgba(255,255,255,0.03); }
+        .notif-item.unread { border-left-color: var(--primary); background: rgba(255, 71, 126, 0.04); }
+        .notif-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); flex-shrink: 0; margin-top: 6px; }
+        .notif-item.read .notif-dot { background: var(--border); }
+        .notif-body { flex: 1; min-width: 0; }
+        .notif-msg { font-size: 0.88rem; color: var(--text); line-height: 1.45; margin: 0; }
+        .notif-time { font-size: 0.72rem; color: var(--muted); margin-top: 4px; }
+        .notif-empty { padding: 30px 20px; text-align: center; color: var(--muted); font-size: 0.88rem; }
     </style>
 </head>
 <body>
@@ -147,7 +205,24 @@ if ($resultVolunteers) {
                     🟢 Logged in as: <?php echo htmlspecialchars($name); ?>
                 </p>
             </div>
-            <div class="date-display" id="current-date"></div>
+            <div style="display: flex; align-items: center; gap: 14px;">
+                <div class="notif-wrapper" id="notif-wrapper">
+                    <div class="notif-bell" id="notif-bell" title="Notifications">
+                        🔔
+                        <span class="notif-badge" id="notif-badge">0</span>
+                    </div>
+                    <div class="notif-dropdown" id="notif-dropdown">
+                        <div class="notif-header">
+                            <h4>Notifications</h4>
+                            <button class="notif-mark-read" id="notif-mark-read">Mark all read</button>
+                        </div>
+                        <div class="notif-list" id="notif-list">
+                            <div class="notif-empty">No notifications yet.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="date-display" id="current-date"></div>
+            </div>
         </div>
 
         <div class="stats-grid">
@@ -315,7 +390,71 @@ if ($resultVolunteers) {
                 closeModal();
             }
         }
+
+        // === NOTIFICATION SYSTEM ===
+        const notifBell = document.getElementById('notif-bell');
+        const notifDropdown = document.getElementById('notif-dropdown');
+        const notifBadge = document.getElementById('notif-badge');
+        const notifList = document.getElementById('notif-list');
+        const notifMarkRead = document.getElementById('notif-mark-read');
+
+        notifBell.addEventListener('click', function(e) {
+            e.stopPropagation();
+            notifDropdown.classList.toggle('open');
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!document.getElementById('notif-wrapper').contains(e.target)) {
+                notifDropdown.classList.remove('open');
+            }
+        });
+
+        notifMarkRead.addEventListener('click', function() {
+            fetch('fetch_notifications.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'action=mark_read'
+            }).then(() => fetchNotifications());
+        });
+
+        function fetchNotifications() {
+            fetch('fetch_notifications.php')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.unread_count > 0) {
+                        notifBadge.textContent = data.unread_count > 99 ? '99+' : data.unread_count;
+                        notifBadge.classList.add('visible');
+                    } else {
+                        notifBadge.classList.remove('visible');
+                    }
+
+                    if (!data.notifications || data.notifications.length === 0) {
+                        notifList.innerHTML = '<div class="notif-empty">No notifications yet.</div>';
+                        return;
+                    }
+
+                    notifList.innerHTML = data.notifications.map(n => `
+                        <div class="notif-item ${n.is_read ? 'read' : 'unread'}">
+                            <div class="notif-dot"></div>
+                            <div class="notif-body">
+                                <p class="notif-msg">${escapeHtml(n.message)}</p>
+                                <div class="notif-time">${n.time_ago}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                })
+                .catch(() => {});
+        }
+
+        function escapeHtml(text) {
+            const d = document.createElement('div');
+            d.textContent = text;
+            return d.innerHTML;
+        }
+
+        // Poll every 30 seconds
+        fetchNotifications();
+        setInterval(fetchNotifications, 30000);
     </script>
 </body>
 </html>
-

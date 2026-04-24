@@ -1,6 +1,7 @@
 <?php
 session_start();
 include 'connection.php';
+require_once 'notification_helpers.php';
 
 $adminRole = $_SESSION['AdminRole'] ?? ($_SESSION['Portal'] ?? 'Admin');
 $name = $_SESSION['Name'] ?? 'System Admin';
@@ -141,6 +142,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
         sync_request_statuses($con, $selected_event_id);
+
+        // Notify each club that received a volunteer request
+        $eventNameForNotif = '';
+        foreach ($events as $ev) {
+            if (intval($ev['event_id']) === $selected_event_id) {
+                $eventNameForNotif = $ev['event_name'];
+                break;
+            }
+        }
+        foreach ($club_map as $notif_club_id => $notif_count) {
+            notifyClub(
+                $con,
+                intval($notif_club_id),
+                "🙋 Admin has requested $notif_count volunteer(s) for \"" . $eventNameForNotif . "\".",
+                'sendVolunteer.php'
+            );
+        }
+
         redirect_with_msg($selected_event_id, 'Volunteer requests saved.');
     } elseif ($action === 'cancel_request') {
         $club_id = intval($_POST['club_id'] ?? 0);
