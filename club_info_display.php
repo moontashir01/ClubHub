@@ -182,7 +182,7 @@ $gallery = $data['gallery'] ?? [];
 
     <nav>
         <div class="logo">Club Hub</div>
-        <a href="dashboard.php" class="nav-btn">Exit Portal</a>
+        <a href="user_dashboard_.php" class="nav-btn">Exit Portal</a>
     </nav>
 
     <header class="hero">
