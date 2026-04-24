@@ -2,10 +2,12 @@
 session_start();
 include 'connection.php';
 
-$club_id = intval($_SESSION['club_id'] ?? ($_SESSION['Club_id'] ?? ($_GET['club_id'] ?? 1)));
-if ($club_id <= 0) {
-    $club_id = 1;
+if (!isset($_SESSION['club_id'])) {
+    header("Location: homepage.php");
+    exit(); 
 }
+
+$club_id = $_SESSION['club_id'];
 $today = date('Y-m-d');
 
 // --- DATE LOGIC ---

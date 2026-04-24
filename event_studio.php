@@ -4,8 +4,12 @@ session_start();
 include 'connection.php';
 mysqli_set_charset($con, "utf8mb4");
 
-if(!isset($_SESSION['Club_id'])){ $_SESSION['Club_id'] = '1'; }
-$club_id = $_SESSION['Club_id'];
+if (!isset($_SESSION['club_id'])) {
+    header("Location: homepage.php");
+    exit(); 
+}
+
+$club_id = $_SESSION['club_id'];
 
 $event_query = mysqli_query($con, "
     SELECT e.event_id, e.event_name 

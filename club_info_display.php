@@ -11,7 +11,7 @@ if (!$row) {
     die("<body style='background:#0b0b13; color:white; display:flex; align-items:center; justify-content:center; height:100vh; font-family:sans-serif; margin:0;'>
             <div style='text-align:center;'>
                 <h2>Club not found.</h2>
-                <a href='dashboard.php' style='color:#ff4d8d; text-decoration:none; border:1px solid #ff4d8d; padding:10px 20px; border-radius:20px;'>Return to Portal</a>
+                <a href='User_dashboard_.php' style='color:#ff4d8d; text-decoration:none; border:1px solid #ff4d8d; padding:10px 20px; border-radius:20px;'>Return to Portal</a>
             </div>
          </body>");
 }

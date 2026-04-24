@@ -151,7 +151,7 @@ if ($selected_id > 0) {
         <nav>
             <div class="logo">Club Hub</div>
             <div>
-                <a href="dashboard.php" class="nav-btn">Back to Portal</a>
+                <a href="admin_dashboard.php" class="nav-btn">Back to Portal</a>
             </div>
         </nav>
         
