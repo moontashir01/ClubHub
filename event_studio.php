@@ -1,5 +1,4 @@
 <?php
-// ... [KEEP YOUR EXISTING PHP HEADER EXACTLY AS IT IS] ...
 session_start();
 include 'connection.php';
 require_once 'notification_helpers.php';
@@ -99,7 +98,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_trigger'])) {
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; display: flex; height: 100vh; overflow: hidden; background: #000; }
 
-        /* RESTORED ERROR STYLING */
         .required-error { border: 2px solid #ff4757 !important; box-shadow: 0 0 10px rgba(255, 71, 87, 0.4); }
         #drop-zone.required-error { border: 2px dashed #ff4757 !important; }
 
@@ -141,7 +139,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_trigger'])) {
         input, textarea, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; outline: none; }
         
         #drop-zone, #tkt-drop-zone { border: 2px dashed #ccc; padding: 20px; text-align: center; border-radius: 8px; cursor: pointer; font-size: 13px; color: #888; }
-        #toggle-btn { position: fixed; top: 20px; left: 20px; background: #000; color: #fff; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; z-index: 100; font-weight: bold; font-size: 12px; }
+        
+        /* BACK BUTTON & TOGGLE BUTTON POSITIONING */
+        #back-btn { position: fixed; top: 20px; left: 20px; background: #ff4757; color: #fff; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; z-index: 101; font-weight: bold; font-size: 12px; text-decoration: none; }
+        #toggle-btn { position: fixed; top: 20px; left: 95px; background: #000; color: #fff; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; z-index: 100; font-weight: bold; font-size: 12px; }
+
         #edit-table-btn, #edit-ticket-btn { margin-top: 10px; background: #eee; border: 1px solid #ccc; padding: 8px; width: 100%; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold; display: none; }
         
         .field-block { border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px; position: relative; }
@@ -155,6 +157,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_trigger'])) {
 </head>
 <body>
 
+<a href="club_dashboard.php" id="back-btn">BACK</a>
 <button id="toggle-btn" onclick="toggleView()">HIDE/SHOW CONFIG</button>
 
 <div id="builder">
@@ -288,27 +291,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_trigger'])) {
     let fields = [{ label: "Full Name", isFull: true, type: 'text' }, { label: "Department", isFull: false, type: 'dropdown', options: "Option 1\nOption 2" }];
     let ticket_fields = [{ label: "Full Name", isFull: true, type: 'text' }];
 
-    // MAIN IMAGE PREVIEW LOGIC
     document.getElementById('fileIn').onchange = e => {
         if(e.target.files.length > 0) {
             const dz = document.getElementById('drop-zone');
             dz.innerText = "File: " + e.target.files[0].name;
             dz.classList.remove('required-error');
-            
             const r = new FileReader(); 
-            r.onload = ev => {
-                document.documentElement.style.setProperty('--bg-img', `url(${ev.target.result})`);
-            }; 
+            r.onload = ev => { document.documentElement.style.setProperty('--bg-img', `url(${ev.target.result})`); }; 
             r.readAsDataURL(e.target.files[0]);
         }
     };
 
-    // TICKET IMAGE PREVIEW LOGIC
     document.getElementById('tktFileIn').onchange = e => {
         if(e.target.files.length > 0) {
             const dz = document.getElementById('tkt-drop-zone');
             dz.innerText = "File: " + e.target.files[0].name;
-            
             const r = new FileReader(); 
             r.onload = ev => {
                 const imgPreview = document.getElementById('tkt-image-preview');
@@ -336,7 +333,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_trigger'])) {
 
     function toggleView() { document.body.classList.toggle('hide-side'); }
 
-    // REGISTRATION FORM TOGGLES
     function toggleEditPlace() {
         const isCurrentlyDesigning = document.getElementById('form-settings').style.display === 'block';
         if (!isCurrentlyDesigning) {
@@ -354,7 +350,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_trigger'])) {
         }
     }
 
-    // TICKET SETTINGS TOGGLES
     function toggleTicketEditPlace() {
         const isCurrentlyDesigning = document.getElementById('ticket-settings').style.display === 'block';
         if (!isCurrentlyDesigning) {
@@ -397,7 +392,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_trigger'])) {
         }
     }
 
-    // REGISTRATION FIELD LOGIC
     function addField(type) {
         fields.push({ label: "New " + type, isFull: true, type: type, options: type === 'dropdown' ? "Option 1\nOption 2" : "" });
         renderFieldSettings();
@@ -419,7 +413,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_trigger'])) {
         });
     }
 
-    // TICKET FIELD LOGIC
     function addTicketField(type) {
         ticket_fields.push({ label: "New " + type, isFull: true, type: type, options: type === 'dropdown' ? "Option 1\nOption 2" : "" });
         renderTicketFieldSettings();
@@ -448,12 +441,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_trigger'])) {
         const fBg = document.getElementById('fieldBgIn').value;
         const fTxt = document.getElementById('fieldTextIn').value;
         const btnC = document.getElementById('formBtnIn').value;
-
         document.getElementById('f-box').style.backgroundColor = bg;
         document.getElementById('form-title-display').style.color = headCol;
         document.getElementById('form-title-display').innerText = document.getElementById('formTitleIn').value;
         document.getElementById('form-submit-btn').style.backgroundColor = btnC;
-        
         const grid = document.getElementById('form-grid'); grid.innerHTML = '';
         fields.forEach(f => {
             const item = document.createElement('div'); item.className = `form-item ${f.isFull ? 'full' : 'half'}`;
@@ -471,13 +462,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_trigger'])) {
         const fTxt = document.getElementById('tktFieldTextIn').value;
         const btnC = document.getElementById('tktBtnIn').value;
         const qty = document.getElementById('tktQtyIn').value;
-
         document.getElementById('tkt-box').style.backgroundColor = bg;
         document.getElementById('tkt-title-display').style.color = headCol;
         document.getElementById('tkt-title-display').innerText = document.getElementById('tktTitleIn').value;
         document.getElementById('tkt-submit-btn').style.backgroundColor = btnC;
         document.getElementById('tkt-qty-display').innerText = "Tickets Available: " + qty;
-        
         const grid = document.getElementById('tkt-grid'); grid.innerHTML = '';
         ticket_fields.forEach(f => {
             const item = document.createElement('div'); item.className = `form-item ${f.isFull ? 'full' : 'half'}`;
@@ -493,26 +482,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_trigger'])) {
         nameEl.style.color = document.getElementById('colorIn').value;
         nameEl.style.fontFamily = document.getElementById('fontSelect').value;
         document.getElementById('view-desc').innerText = document.getElementById('descIn').value || "Briefly describe your event.";
-        
         document.getElementById('view-reg').style.display = document.getElementById('regToggle').checked ? 'block' : 'none';
         document.getElementById('edit-table-btn').style.display = document.getElementById('regToggle').checked ? 'block' : 'none';
-        
         document.getElementById('view-tkt').style.display = document.getElementById('tktToggle').checked ? 'block' : 'none';
         document.getElementById('edit-ticket-btn').style.display = document.getElementById('tktToggle').checked ? 'block' : 'none';
     }
 
     function saveJSON() {
-        const eSelect = document.getElementById('eventSelect'), 
-              eTime = document.getElementById('endTimeIn'), 
-              nIn = document.getElementById('nameIn'), 
-              dIn = document.getElementById('descIn'), 
-              detIn = document.getElementById('detailIn'), 
-              fIn = document.getElementById('fileIn'), 
-              dz = document.getElementById('drop-zone');
-        
-        // CLEAR PREVIOUS ERRORS
+        const eSelect = document.getElementById('eventSelect'), eTime = document.getElementById('endTimeIn'), nIn = document.getElementById('nameIn'), dIn = document.getElementById('descIn'), detIn = document.getElementById('detailIn'), fIn = document.getElementById('fileIn'), dz = document.getElementById('drop-zone');
         [eSelect, eTime, nIn, dIn, detIn, dz].forEach(el => el.classList.remove('required-error'));
-
         let error = false;
         if(!eSelect.value){ eSelect.classList.add('required-error'); error=true; }
         if(!eTime.value){ eTime.classList.add('required-error'); error=true; }
@@ -520,45 +498,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_trigger'])) {
         if(!dIn.value.trim()){ dIn.classList.add('required-error'); error=true; }
         if(!detIn.value.trim()){ detIn.classList.add('required-error'); error=true; }
         if(fIn.files.length === 0){ dz.classList.add('required-error'); error=true; }
-
-        if(error){ 
-            alert("Please fill all highlighted required fields."); 
-            return; 
-        }
-
+        if(error){ alert("Please fill all highlighted required fields."); return; }
         const formData = new FormData();
         const configData = { 
-            description: dIn.value, 
-            longDetail: detIn.value, 
-            fields: fields, 
-            yPos: document.getElementById('yRange').value, 
-            font: document.getElementById('fontSelect').value, 
-            color: document.getElementById('colorIn').value, 
-            hSize: document.getElementById('hSizeRange').value, 
-            regToggle: document.getElementById('regToggle').checked, 
-            tktToggle: document.getElementById('tktToggle').checked, 
-            formColors: { 
-                bg: document.getElementById('formBgIn').value, 
-                title: document.getElementById('formTitleColIn').value, 
-                label: document.getElementById('labelColIn').value, 
-                fieldBg: document.getElementById('fieldBgIn').value, 
-                fieldTxt: document.getElementById('fieldTextIn').value, 
-                btn: document.getElementById('formBtnIn').value, 
-                formTitleText: document.getElementById('formTitleIn').value 
-            },
-            ticketData: {
-                qty: document.getElementById('tktQtyIn').value,
-                fields: ticket_fields,
-                colors: {
-                    bg: document.getElementById('tktBgIn').value,
-                    title: document.getElementById('tktTitleColIn').value,
-                    label: document.getElementById('tktLabelColIn').value,
-                    fieldBg: document.getElementById('tktFieldBgIn').value,
-                    fieldTxt: document.getElementById('tktFieldTextIn').value,
-                    btn: document.getElementById('tktBtnIn').value,
-                    formTitleText: document.getElementById('tktTitleIn').value 
-                }
-            }
+            description: dIn.value, longDetail: detIn.value, fields: fields, yPos: document.getElementById('yRange').value, font: document.getElementById('fontSelect').value, color: document.getElementById('colorIn').value, hSize: document.getElementById('hSizeRange').value, regToggle: document.getElementById('regToggle').checked, tktToggle: document.getElementById('tktToggle').checked, 
+            formColors: { bg: document.getElementById('formBgIn').value, title: document.getElementById('formTitleColIn').value, label: document.getElementById('labelColIn').value, fieldBg: document.getElementById('fieldBgIn').value, fieldTxt: document.getElementById('fieldTextIn').value, btn: document.getElementById('formBtnIn').value, formTitleText: document.getElementById('formTitleIn').value },
+            ticketData: { qty: document.getElementById('tktQtyIn').value, fields: ticket_fields, colors: { bg: document.getElementById('tktBgIn').value, title: document.getElementById('tktTitleColIn').value, label: document.getElementById('tktLabelColIn').value, fieldBg: document.getElementById('tktFieldBgIn').value, fieldTxt: document.getElementById('tktFieldTextIn').value, btn: document.getElementById('tktBtnIn').value, formTitleText: document.getElementById('tktTitleIn').value } }
         };
         formData.append('save_trigger', 'true');
         formData.append('event_id', eSelect.value);
@@ -566,19 +511,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_trigger'])) {
         formData.append('name', nIn.value);
         formData.append('data_json', JSON.stringify(configData));
         formData.append('image_file', fIn.files[0]);
-        
-        // Append ticket image if uploaded
         const tktFileIn = document.getElementById('tktFileIn');
-        if (tktFileIn.files.length > 0) {
-            formData.append('ticket_image_file', tktFileIn.files[0]);
-        }
-
-        fetch(window.location.href, { method: 'POST', body: formData })
-            .then(r => r.text())
-            .then(t => { 
-                alert(t); 
-                if(t.includes("Success")) window.location.reload(); 
-            });
+        if (tktFileIn.files.length > 0) formData.append('ticket_image_file', tktFileIn.files[0]);
+        fetch(window.location.href, { method: 'POST', body: formData }).then(r => r.text()).then(t => { alert(t); if(t.includes("Success")) window.location.reload(); });
     }
 
     document.getElementById('yRange').oninput = function() { document.documentElement.style.setProperty('--pos-y', this.value + "%"); };

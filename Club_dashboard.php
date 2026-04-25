@@ -194,7 +194,7 @@ $name = $_SESSION['Name'] ?? 'Guest';
         ];
 
         const dashboardActions = [
-            { title: 'Forms', icon: '📋', desc: 'View form responses.', link: 'form_response.php' },
+            { title: 'Forms', icon: '📋', desc: 'View form responses.', link: 'view_responses.php' },
             { title: 'Send Volunteers', icon: '🚀', desc: 'Dispatch members for events.', link: 'sendVolunteer.php', badge: <?php echo $pendingCount; ?> },
             { title: 'Add Members', icon: '➕', desc: 'Register new members.', link: 'manage_members.php' },
             { title: 'Event Logs', icon: '📝', desc: 'Review past and upcoming activities.', link: 'eventlogs.php' },

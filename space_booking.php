@@ -31,8 +31,9 @@ if(isset($_GET['slot'])){
             }
         } else {
             $status = 'Pending';
-            $insert = $con->prepare("INSERT INTO space_bookings (club_id, booking_date, slot, status) VALUES (?, ?, ?, ?)");
-            $insert->bind_param("isis", $club_id, $booking_date, $slot_id, $status);
+            $applied_time = date('Y-m-d H:i:s'); // <-- ADDED: Capture exact current time
+            $insert = $con->prepare("INSERT INTO space_bookings (club_id, booking_date, slot, status, created_at) VALUES (?, ?, ?, ?, ?)"); // <-- ADDED: created_at column
+            $insert->bind_param("isiss", $club_id, $booking_date, $slot_id, $status, $applied_time); // <-- ADDED: Bind applied_time parameter
             $insert->execute();
         }
     }
@@ -80,6 +81,18 @@ while($row = $res->fetch_assoc()){
         body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; }
         #panorama { width: 100%; height: 100vh; }
         
+        /* --- BACK BUTTON --- */
+        .back-container {
+            position: absolute; top: 25px; left: 25px; z-index: 1000;
+        }
+        .back-btn {
+            background: #111; padding: 12px 20px; border-radius: 12px;
+            border: 2px solid #ff4d8d; box-shadow: 0 0 15px rgba(255, 77, 141, 0.3);
+            color: #ff4d8d; font-size: 13px; font-weight: bold; text-decoration: none;
+            text-transform: uppercase; transition: all 0.3s ease; display: inline-block;
+        }
+        .back-btn:hover { background: #ff4d8d; color: #fff; box-shadow: 0 0 20px rgba(255, 77, 141, 0.6); }
+
         /* --- PINK DATE PICKER --- */
         .date-container {
             position: absolute; top: 25px; right: 25px; z-index: 1000;
@@ -104,7 +117,7 @@ while($row = $res->fetch_assoc()){
         .tall-button span { font-size: 11px; font-weight: normal; margin-top: 5px; display: block; opacity: 0.9; }
         .club-label { color: #ff8800; font-style: italic; font-size: 12px !important; margin-top: 8px !important; }
 
-        /* --- SPECIFIC BUTTON ANGLES (Change these numbers to tilt them differently) --- */
+        /* --- SPECIFIC BUTTON ANGLES --- */
         .angle-1 { transform: rotateY(0deg); }
         .angle-2 { transform: rotateY(-25deg); }
         .angle-3 { transform: rotateY(0deg); }
@@ -112,14 +125,11 @@ while($row = $res->fetch_assoc()){
         .angle-5 { transform: rotateY(-15deg); }
         .angle-6 { transform: rotateY(-5deg); }
 
-        /* --- HOVER EFFECT: BECOME STRAIGHT AND POP OUT --- */
-        /* Placed after the angle classes so it overrides them on hover */
         .tall-button:hover:not(.is-confirmed) { 
             transform: rotateY(0deg) scale(1.05) translateZ(30px); 
             box-shadow: 0 0 20px rgba(0, 255, 204, 0.4); 
         }
 
-        /* --- STATUS COLORS (FIXED TEXT COLORS) --- */
         .is-my-pending { 
             background: rgba(255, 255, 0, 0.4) !important; 
             border-color: #ffff00 !important; 
@@ -139,6 +149,10 @@ while($row = $res->fetch_assoc()){
     </style>
 </head>
 <body>
+
+<div class="back-container">
+    <a href="club_dashboard.php" class="back-btn">← Back to Dashboard</a>
+</div>
 
 <div class="date-container">
     <label>Date</label>
@@ -175,7 +189,6 @@ while($row = $res->fetch_assoc()){
         
         const btn = document.createElement('div');
         btn.classList.add('tall-button');
-        // Add the specific angle class directly to the button
         btn.classList.add(args.className); 
         btn.innerHTML = "<strong>" + args.label + "</strong>";
 
