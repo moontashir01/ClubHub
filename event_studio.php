@@ -17,6 +17,7 @@ $event_query = mysqli_query($con, "
     LEFT JOIN event_configs ec ON e.event_id = ec.event_id 
     WHERE e.club_id = '$club_id' 
     AND ec.event_id IS NULL 
+    AND e.admin_clearance = 'Approved'
     ORDER BY e.event_name ASC
 ");
 
