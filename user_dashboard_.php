@@ -364,47 +364,88 @@ if ($result) {
         const hero = document.getElementById('hero-slider');
         const miniContainer = document.getElementById('mini-portal-container');
 
-        contentData.forEach((item, i) => {
-            const slide = document.createElement('div');
-            slide.className = `slide ${i === 0 ? 'active' : ''}`;
-            slide.style.backgroundImage = `url('${item.img}')`;
-            slide.style.backgroundPosition = `center ${item.yPos}`;
-            
-            let regBtn = item.showReg ? `<button onclick="openRegForm(${i})" style="background:var(--pink); border:none; color:white; padding:14px 35px; border-radius:30px; font-weight:bold; cursor:pointer; margin-right:10px;">Register</button>` : '';
-            let tktBtn = '';
-            if (item.showTkt) {
-                if (item.remainingTickets <= 0) {
-                    tktBtn = `<button disabled style="background:#555; border:none; color:#ccc; padding:14px 35px; border-radius:30px; font-weight:bold; margin-right:10px; cursor:not-allowed;">House Full</button>`;
-                } else {
-                    tktBtn = `<button onclick="openTicketForm(${i})" style="background:transparent; border:1px solid white; color:white; padding:14px 35px; border-radius:30px; font-weight:bold; cursor:pointer; margin-right:10px;">Get Tickets</button>`;
+        let slides = [];
+        let minis = [];
+        let currentIdx = 0;
+        let slideInterval;
+
+        function initSlider(showAll = false) {
+            hero.querySelectorAll('.slide').forEach(s => s.remove());
+            miniContainer.innerHTML = '';
+            clearInterval(slideInterval);
+
+            const displayData = showAll ? contentData : contentData.slice(0, 5);
+
+            displayData.forEach((item, i) => {
+                const slide = document.createElement('div');
+                slide.className = `slide ${i === 0 ? 'active' : ''}`;
+                slide.style.backgroundImage = `url('${item.img}')`;
+                slide.style.backgroundPosition = `center ${item.yPos}`;
+                
+                let regBtn = item.showReg ? `<button onclick="openRegForm(${i})" style="background:var(--pink); border:none; color:white; padding:14px 35px; border-radius:30px; font-weight:bold; cursor:pointer; margin-right:10px;">Register</button>` : '';
+                let tktBtn = '';
+                if (item.showTkt) {
+                    if (item.remainingTickets <= 0) {
+                        tktBtn = `<button disabled style="background:#555; border:none; color:#ccc; padding:14px 35px; border-radius:30px; font-weight:bold; margin-right:10px; cursor:not-allowed;">House Full</button>`;
+                    } else {
+                        tktBtn = `<button onclick="openTicketForm(${i})" style="background:transparent; border:1px solid white; color:white; padding:14px 35px; border-radius:30px; font-weight:bold; cursor:pointer; margin-right:10px;">Get Tickets</button>`;
+                    }
                 }
+
+                slide.innerHTML = `
+                    <div class="content">
+                        <h1 style="color:${item.titleColor}">${item.title}</h1>
+                        <div class="timer-container" id="timer-${i}">Ends in: --h --m --s</div>
+                        <p class="description">${item.desc}</p>
+                        <div style="display:flex;">
+                            ${regBtn} ${tktBtn}
+                            <button onclick="openDetails(${i})" style="background:rgba(255,255,255,0.1); border:1px solid white; color:white; padding:14px 35px; border-radius:30px; cursor:pointer; font-weight:bold;">View Details</button>
+                        </div>
+                    </div>`;
+                hero.appendChild(slide);
+
+                const mini = document.createElement('div');
+                mini.className = `mini-card ${i === 0 ? 'active' : ''}`;
+                mini.innerHTML = `<img src="${item.img}"><div class="mini-label">${item.club}</div>`;
+                mini.onclick = () => jumpToSlide(i);
+                miniContainer.appendChild(mini);
+            });
+
+            if (!showAll && contentData.length > 5) {
+                const viewAllMini = document.createElement('div');
+                viewAllMini.className = 'mini-card';
+                viewAllMini.style.display = 'flex';
+                viewAllMini.style.alignItems = 'center';
+                viewAllMini.style.justifyContent = 'center';
+                viewAllMini.style.background = 'rgba(255, 77, 141, 0.2)';
+                viewAllMini.style.border = '1px solid var(--pink)';
+                viewAllMini.style.color = 'white';
+                viewAllMini.style.fontWeight = 'bold';
+                viewAllMini.style.textAlign = 'center';
+                viewAllMini.style.cursor = 'pointer';
+                viewAllMini.innerHTML = '<span style="font-size:14px; text-transform:uppercase;">View All<br>Events</span>';
+                viewAllMini.onclick = () => initSlider(true);
+                miniContainer.appendChild(viewAllMini);
             }
 
-            slide.innerHTML = `
-                <div class="content">
-                    <h1 style="color:${item.titleColor}">${item.title}</h1>
-                    <div class="timer-container" id="timer-${i}">Ends in: --h --m --s</div>
-                    <p class="description">${item.desc}</p>
-                    <div style="display:flex;">
-                        ${regBtn} ${tktBtn}
-                        <button onclick="openDetails(${i})" style="background:rgba(255,255,255,0.1); border:1px solid white; color:white; padding:14px 35px; border-radius:30px; cursor:pointer; font-weight:bold;">View Details</button>
-                    </div>
-                </div>`;
-            hero.appendChild(slide);
-
-            const mini = document.createElement('div');
-            mini.className = `mini-card ${i === 0 ? 'active' : ''}`;
-            mini.innerHTML = `<img src="${item.img}"><div class="mini-label">${item.club}</div>`;
-            mini.onclick = () => jumpToSlide(i);
-            miniContainer.appendChild(mini);
-        });
+            slides = document.querySelectorAll('.slide');
+            minis = document.querySelectorAll('.mini-card');
+            currentIdx = 0;
+            
+            if (slides.length > 0) {
+                slideInterval = setInterval(() => jumpToSlide((currentIdx + 1) % slides.length), 5000);
+            }
+            updateTimers();
+        }
 
         function updateTimers() {
-            contentData.forEach((item, i) => {
+            const displayData = slides.length === contentData.length ? contentData : contentData.slice(0, 5);
+            displayData.forEach((item, i) => {
                 const target = new Date(item.endTime).getTime();
                 const now = new Date().getTime();
                 const diff = target - now;
                 const timerEl = document.getElementById(`timer-${i}`);
+                if(!timerEl) return;
                 if (diff <= 0) { timerEl.innerText = "Event Ended"; return; }
                 const days = Math.floor(diff / (1000 * 60 * 60 * 24));
                 const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -416,8 +457,6 @@ if ($result) {
                 timerEl.innerText = display;
             });
         }
-        setInterval(updateTimers, 1000);
-        updateTimers();
 
         function openDetails(idx) {
             const item = contentData[idx];
@@ -520,14 +559,17 @@ if ($result) {
             document.getElementById('tktModal').style.display = 'none';
         }
 
-        let currentIdx = 0;
-        const slides = document.querySelectorAll('.slide');
-        const minis = document.querySelectorAll('.mini-card');
         function jumpToSlide(n) {
-            slides[currentIdx].classList.remove('active'); minis[currentIdx].classList.remove('active');
-            currentIdx = n; slides[currentIdx].classList.add('active'); minis[currentIdx].classList.add('active');
+            if (!slides[n]) return;
+            if(slides[currentIdx]) slides[currentIdx].classList.remove('active'); 
+            if(minis[currentIdx]) minis[currentIdx].classList.remove('active');
+            currentIdx = n; 
+            slides[currentIdx].classList.add('active'); 
+            if(minis[currentIdx]) minis[currentIdx].classList.add('active');
         }
-        setInterval(() => jumpToSlide((currentIdx + 1) % slides.length), 5000);
+
+        initSlider(false);
+        setInterval(updateTimers, 1000);
 
         // --- CHATBOT SESSIONS & CACHE ---
         const tabSessionId = "tab_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5);
