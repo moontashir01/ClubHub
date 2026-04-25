@@ -492,11 +492,11 @@ if ($clubId > 0 && $searchQuery !== '') {
             ON cm.student_id = s.student_id
            AND cm.club_id = ?
            AND cm.active = 1
-         WHERE s.student_id LIKE ? OR s.full_name LIKE ?
+         WHERE s.student_id LIKE ? OR s.full_name LIKE ? OR s.student_email LIKE ?
          ORDER BY CASE WHEN s.student_id = ? THEN 0 ELSE 1 END, s.full_name ASC
          LIMIT 50'
     );
-    $searchStmt->bind_param('isss', $clubId, $like, $like, $searchQuery);
+    $searchStmt->bind_param('issss', $clubId, $like, $like, $like, $searchQuery);
     $searchStmt->execute();
     $result = $searchStmt->get_result();
 
@@ -1040,7 +1040,7 @@ if ($clubId > 0) {
                         type="text"
                         name="q"
                         value="<?php echo htmlspecialchars($searchQuery); ?>"
-                        placeholder="Search by Name or Student ID"
+                        placeholder="Search by Name, Email or Student ID"
                         <?php echo $clubId <= 0 ? 'disabled' : ''; ?>
                     >
                     <button class="btn" type="submit" <?php echo $clubId <= 0 ? 'disabled' : ''; ?>>Search</button>

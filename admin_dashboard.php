@@ -269,7 +269,7 @@ if ($resultVolunteers) {
     <main class="main-content">
         <div class="header">
             <div>
-                <h1 style="margin: 0; font-size: 2.2rem; font-weight: 700; background: linear-gradient(to right, #fff, #aaa); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Command Center</h1>
+                <h1 style="margin: 0; font-size: 2.2rem; font-weight: 700; background: linear-gradient(to right, #fff, #aaa); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Command Center</h1>
                 <p style="margin: 5px 0 0 0; color: var(--primary); font-weight: bold; letter-spacing: 1px; text-transform: uppercase; font-size: 0.85rem;">
                     🟢 Logged in as: <?php echo htmlspecialchars($name); ?>
                 </p>
