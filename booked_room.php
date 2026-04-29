@@ -6,22 +6,22 @@ if (session_status() === PHP_SESSION_NONE) {
 include 'connection.php';
 
 
-$conn = new mysqli($host, $user, $password, $dbname, $port);
+$conn = new mysqli($db_server, $db_user, $db_pass, $db_name, $port);
 
 if ($conn->connect_error) {
     die("Database Connection failed: " . $conn->connect_error);
 }
 
 
-
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && isset($_POST['booking_id'])) {
     $booking_id = $_POST['booking_id'];
     $action = $_POST['action'];
 
+    // এখানে booking_id ধরে আপডেট করা হচ্ছে, যাতে স্পেসিফিক বুকিংটাই আপডেট হয়
     if ($action === 'approve') {
-        $update_sql = "UPDATE room_bookings SET status='Approved' WHERE room_id=?"; 
+        $update_sql = "UPDATE room_bookings SET status='Approved' WHERE booking_id=?"; 
     } elseif ($action === 'reject') {
-        $update_sql = "UPDATE room_bookings SET status='Rejected' WHERE room_id=?";
+        $update_sql = "UPDATE room_bookings SET status='Rejected' WHERE booking_id=?";
     }
 
     if (isset($update_sql)) {
@@ -33,7 +33,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && isset($_P
         exit();
     }
 }
-
 
 
 $pending_count = $conn->query("SELECT COUNT(*) as count FROM room_bookings WHERE status='Pending' OR status='pending'")->fetch_assoc()['count'];
@@ -61,7 +60,6 @@ $availability_result = $conn->query($availability_sql);
         body { background-color: #0d1117; color: #c9d1d9; padding: 30px; }
         .container { max-width: 1300px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
         
-        
         .top-bar { display: flex; align-items: center; margin-bottom: 10px; }
         .back-btn { background-color: #21262d; color: #c9d1d9; text-decoration: none; padding: 8px 16px; border-radius: 6px; border: 1px solid #30363d; font-size: 14px; transition: 0.3s; margin-right: 20px; }
         .back-btn:hover { background-color: #30363d; color: #fff; }
@@ -75,13 +73,10 @@ $availability_result = $conn->query($availability_sql);
         .stat-card.approved .number { color: #3fb950; }
         .stat-card.total .number { color: #58a6ff; }
 
-       
         .main-layout { display: flex; gap: 20px; align-items: flex-start; }
-        
         
         .table-section { flex: 2.5; background: #161b22; border-radius: 15px; border: 1px solid #30363d; padding: 20px; }
         
-      
         .filter-tabs { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; }
         .filter-btn { padding: 8px 20px; border-radius: 20px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; background: #21262d; color: #8b949e; transition: 0.3s; }
         .filter-btn.active, .filter-btn:hover { background: #ff477e; color: white; }
@@ -93,7 +88,6 @@ $availability_result = $conn->query($availability_sql);
         tbody tr:hover { background-color: #1f242c; }
         .club-name { font-weight: 600; color: #58a6ff; }
         
-       
         .badge { padding: 5px 10px; border-radius: 15px; font-size: 11px; font-weight: 600; display: inline-block; text-transform: uppercase;}
         .badge.pending { background: rgba(210, 153, 34, 0.15); color: #d29922; border: 1px solid rgba(210, 153, 34, 0.4); }
         .badge.approved { background: rgba(46, 160, 67, 0.15); color: #3fb950; border: 1px solid rgba(46, 160, 67, 0.4); }
@@ -157,7 +151,9 @@ $availability_result = $conn->query($availability_sql);
                         while ($row = $result->fetch_assoc()) {
                             $status = $row['status'] ?? 'Pending';
                             $badgeClass = strtolower($status);
-                            $bookingID = $row['id'] ?? $row['booking_id'] ?? 0; 
+                            
+                            // এখানেও booking_id ঠিক করা হয়েছে
+                            $bookingID = $row['booking_id'] ?? 0; 
                             
                             $clubName = htmlspecialchars($row['club_name'] ?? $row['club'] ?? 'N/A');
                             $roomName = htmlspecialchars($row['room_name'] ?? $row['room_no'] ?? $row['room'] ?? $row['select_room'] ?? 'N/A'); 

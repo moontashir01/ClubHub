@@ -1,17 +1,15 @@
 <?php
-// connection.php
-
-$host = "127.0.0.1"; 
-$port = "3308";     
-$user = "root";      
-$password = "";      
-$dbname = "clala"; 
-
-
-$con = mysqli_connect($host, $user, $password, $dbname, $port);
-
-
-if (!$con) {
-    die("Database Connection Error: " . mysqli_connect_error());
-}
+    $db_server = 'localhost';
+    $db_user = 'root';
+    $port = '3308';
+    $db_pass = '';
+    $db_name = 'clam';
+    
+    try {
+        
+        $con = mysqli_connect($db_server, $db_user, $db_pass, $db_name, $port);
+    } catch(mysqli_sql_exception) {
+        echo "Not Connected";
+        exit(); 
+    }
 ?>

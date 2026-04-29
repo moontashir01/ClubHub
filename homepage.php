@@ -27,7 +27,7 @@ include 'connection.php';
             padding: 20px; box-sizing: border-box; gap: 20px;
         }
 
-        /* Left Side Slider */
+        
         .slider-frame { 
             flex: 1.2; position: relative; overflow: hidden; 
             border-radius: var(--card-radius);
@@ -47,13 +47,13 @@ include 'connection.php';
             background: linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(11,11,19,0.8)); 
         }
 
-        /* Right Side Forms */
+        
         .login-side { 
             flex: 0.8; display: flex; flex-direction: column;
             justify-content: center; align-items: center; position: relative;
         }
 
-        /* Reverting Brand to your preferred absolute position */
+        
         .brand { position: absolute; top: 40px; left: 120px; }
         .brand h2 {
             margin: 0; font-size: 2.5rem; background: linear-gradient(45deg, #fff, var(--pink));
@@ -85,7 +85,7 @@ include 'connection.php';
 
         .login-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(255, 77, 141, 0.3); }
 
-        /* Alert Messages */
+        
         .alert-msg {
             padding: 12px; border-radius: 12px; margin-bottom: 20px; 
             font-size: 0.85rem; font-weight: bold; text-align: center;
@@ -93,7 +93,7 @@ include 'connection.php';
         .alert-error { background: rgba(255, 77, 77, 0.15); color: #ff4d4d; border: 1px solid rgba(255, 77, 77, 0.3); }
         .alert-success { background: rgba(77, 255, 141, 0.15); color: #4dff8d; border: 1px solid rgba(77, 255, 141, 0.3); }
 
-        /* New: Message Placeholder inside the form box */
+        
         .msg-placeholder { min-height: 20px; margin-bottom: 10px; }
 
         @media (max-width: 900px) { .slider-frame { display: none; } .login-side { flex: 1; } }
@@ -125,9 +125,12 @@ include 'connection.php';
                         <label>Email Address</label>
                         <input type="email" name="Email" required>
                     </div>
-                    <div class="input-group">
+                    <div class="input-group" style="margin-bottom: 5px;">
                         <label>Password</label>
                         <input type="password" name="Password" required>
+                    </div>
+                    <div style="text-align: right; margin-bottom: 20px;">
+                        <a href="forgot_password.php" style="color: #888; text-decoration: none; font-size: 0.75rem; transition: 0.3s;" onmouseover="this.style.color='var(--pink)'" onmouseout="this.style.color='#888'">Forgot Password?</a>
                     </div>
                     <button type="submit" name="submit" class="login-btn">Sign In</button>
                 </form>
@@ -246,7 +249,7 @@ include 'connection.php';
             }
         };
 
-        // Slider Logic
+        
         const events = [
             { img: 'images/blood-donation-5427229_1920.jpg', title: "Socio Camp" },
             { img: 'images/athlete-sport-design-illustration-art-vector.jpg', title: "NFL Tournament" },

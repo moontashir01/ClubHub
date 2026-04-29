@@ -9,7 +9,7 @@ if (!isset($_SESSION['Email'])) {
 
 $email = $_SESSION['Email'];
 
-// Get club name
+
 $query = mysqli_query($con, "
     SELECT c.club_name 
     FROM user u
@@ -22,14 +22,14 @@ $query = mysqli_query($con, "
 $clubRow = mysqli_fetch_assoc($query);
 $clubName = $clubRow ? $clubRow['club_name'] : "No Club Found";
 
-// Handle Delete
+
 if (isset($_POST['delete_id'])) {
     $id = (int)$_POST['delete_id'];
     mysqli_query($con, "DELETE FROM vc_applications WHERE id = $id AND club_name = '" . mysqli_real_escape_string($con, $clubName) . "'");
     echo "<script>alert('Application deleted successfully!'); window.location.href='application_status.php';</script>";
 }
 
-// Fetch all applications with rejection note
+
 $apps = mysqli_query($con, "
     SELECT id, subject, status, created_at, letter_content, rejection_note 
     FROM vc_applications 
@@ -172,7 +172,7 @@ $apps = mysqli_query($con, "
     <nav>
         <div class="logo">ClubHub</div>
         <div style="font-size:1.1rem; color:var(--primary);"><?php echo htmlspecialchars($clubName); ?></div>
-        <a href="Club_dashboard.php" style="color:#ff477e; text-decoration:none; font-weight:600;">← Back to Dashboard</a>
+        <a href="application.php" style="color:#ff477e; text-decoration:none; font-weight:600;"> 🔙 Back </a>
     </nav>
 
     <div class="main-content">
@@ -239,16 +239,16 @@ $apps = mysqli_query($con, "
     <iframe id="print-iframe" style="display:none;"></iframe>
 
     <script>
-        // Updated print function using a hidden iframe
+        
         function printPDF(url) {
             const iframe = document.getElementById('print-iframe');
             
-            // Set the source of the iframe to the PDF URL
+         
             iframe.src = url;
             
-            // Wait for the PDF to load in the iframe before printing
+         
             iframe.onload = function() {
-                // A small timeout ensures the browser's PDF engine has fully rendered the document
+         
                 setTimeout(function() {
                     iframe.contentWindow.focus();
                     iframe.contentWindow.print();
@@ -272,7 +272,7 @@ $apps = mysqli_query($con, "
             });
         }
 
-        // Auto animation stagger
+       
         document.querySelectorAll('.app-card').forEach((card, i) => {
             card.style.animationDelay = (i * 80) + 'ms';
         });

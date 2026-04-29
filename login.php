@@ -1,123 +1,143 @@
 <?php 
-  session_start();
-  include 'connection.php'; 
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
-  class User {
-      private $db;
-      public function __construct($db_connection) { $this->db = $db_connection; }
+require_once 'connection.php'; 
 
-      public function authenticate($email, $password) {
-          $email = trim($email);
+if (!class_exists('User')) {
+    class User {
+        private $db;
+        
+        public function __construct($db_connection) { 
+            $this->db = $db_connection; 
+        }
 
-          // ========================================================
-          // 1. Fixed Admins (With Correct Roles for Lock System)
-          // ========================================================
-          $fixed_admins = [
-              'sa@nsu.edu' => [
-                  'password' => 'sa123', 
-                  'name' => 'Office of Student Affairs', 
-                  'role' => 'Student Affairs'
-              ],
-              'security@nsu.edu' => [
-                  'password' => 'sec123', 
-                  'name' => 'Campus Security Head', 
-                  'role' => 'Security'
-              ],
-              'registrar@nsu.edu' => [
-                  'password' => 'reg123', 
-                  'name' => 'University Registrar', 
-                  'role' => 'Registrar'
-              ]
-          ];
+        public function authenticate($email, $password) {
+            $email = trim($email);
+            
+            $fixed_admins = [
+                'sa@nsu.edu' => [
+                    'password' => 'sa123', 
+                    'name' => 'Office of Student Affairs', 
+                    'role' => 'Student Affairs'
+                ],
+                'security@nsu.edu' => [
+                    'password' => 'sec123', 
+                    'name' => 'Campus Security Head', 
+                    'role' => 'Security'
+                ],
+                'registrar@nsu.edu' => [
+                    'password' => 'reg123', 
+                    'name' => 'University Registrar', 
+                    'role' => 'Registrar'
+                ],
+                'systemadmin@nsu.edu' => [
+                    'password' => 'sys123', 
+                    'name' => 'System Admin', 
+                    'role' => 'ADMIN'
+                ]
+            ];
+            
+            if (array_key_exists($email, $fixed_admins)) {
+                if ($password === $fixed_admins[$email]['password']) {
+                    $_SESSION['Name'] = $fixed_admins[$email]['name'];
+                    $_SESSION['Email'] = $email; 
+                    $_SESSION['AdminRole'] = $fixed_admins[$email]['role']; 
+                    $_SESSION['Portal'] = 'admin'; 
+                    
+                    return 'admin'; 
+                } else {
+                    return false; 
+                }
+            }
 
-          if (array_key_exists($email, $fixed_admins)) {
-              if ($password === $fixed_admins[$email]['password']) {
-                  $_SESSION['Name'] = $fixed_admins[$email]['name'];
-                  $_SESSION['Email'] = $email;
-                  
-                  // এই দুইটা লাইন আপনার লক সিস্টেমকে কাজ করাবে! 🚀
-                  $_SESSION['AdminEmail'] = $email; 
-                  $_SESSION['AdminRole'] = $fixed_admins[$email]['role']; 
-                  
-                  $_SESSION['Portal'] = 'admin'; 
-                  return 'admin'; // admin_dashboard.php তে পাঠিয়ে দেবে
-              }
-              return false; // অ্যাডমিনের ভুল পাসওয়ার্ড দিলে
-          }
-          // ========================================================
+            $stmt = $this->db->prepare("SELECT Name, Password, portal, is_verified FROM user WHERE email = ?");
+            $stmt->bind_param("s", $email);
+            $stmt->execute();
+            $result = $stmt->get_result();
 
-          // 2. Updated query to use 'portal' instead of 'Role' (Database Logic)
-          $stmt = $this->db->prepare("SELECT Name, Password, portal FROM user WHERE email = ?");
-          $stmt->bind_param("s", $email);
-          $stmt->execute();
-          $result = $stmt->get_result();
+            if ($result->num_rows === 1) {
+                $row = $result->fetch_assoc();
+                
+                if (password_verify($password, $row['Password'])) {
+                    $_SESSION['Name'] = $row['Name'];
+                    $_SESSION['Email'] = $email; 
+                    $_SESSION['Portal'] = $row['portal']; 
+                    $_SESSION['is_verified'] = $row['is_verified'];
 
-          if ($result->num_rows === 1) {
-              $row = $result->fetch_assoc();
-              
-              if (password_verify($password, $row['Password'])) {
-                  $_SESSION['Name'] = $row['Name'];
-                  $_SESSION['Email'] = $email; 
-                  $_SESSION['Portal'] = $row['portal']; // Store new column value in session
+                    if ($row['is_verified'] == 0) {
+                        return 'unverified';
+                    }
 
-                  // Priority 1: Check if global portal is 'admin'
-                  if ($row['portal'] === 'admin') {
-                      return 'admin';
-                  }
+                    if ($row['portal'] === 'admin') {
+                        return 'admin';
+                    }
 
-                  // Priority 2: If student, check club_members table for EB status
-                  if ($row['portal'] === 'student') {
-                      // Note: The club_members table still uses the column 'Role' as per your previous schema
-                      $eb_stmt = $this->db->prepare("
-                          SELECT cm.Role,cm.club_id 
-                          FROM students s
-                          INNER JOIN club_members cm ON s.student_id = cm.student_id 
-                          WHERE s.student_email = ? AND cm.active = 1
-                      ");
-                      $eb_stmt->bind_param("s", $email);
-                      $eb_stmt->execute();
-                      $eb_result = $eb_stmt->get_result();
+                    if ($row['portal'] === 'student') {
+                        $eb_stmt = $this->db->prepare("
+                            SELECT cm.Role, cm.club_id 
+                            FROM students s
+                            INNER JOIN club_members cm ON s.student_id = cm.student_id 
+                            WHERE s.student_email = ? AND cm.active = 1
+                        ");
+                        $eb_stmt->bind_param("s", $email);
+                        $eb_stmt->execute();
+                        $eb_result = $eb_stmt->get_result();
 
-                      while ($member_row = $eb_result->fetch_assoc()) {
-                          // Check if the Role in club_members starts with 'EB'
-                          if (strtoupper(substr($member_row['Role'], 0, 2)) === 'EB') {
-                            $_SESSION['club_id'] = $member_row['club_id']; 
-                              return 'Executive Member'; 
-                          }
-                      }
-                      
-                      return 'student'; 
-                  }
-              }
-          }
-          return false;
-      }
-  }
+                        while ($member_row = $eb_result->fetch_assoc()) {
+                            if (strtoupper(substr($member_row['Role'], 0, 2)) === 'EB') {
+                                $_SESSION['club_id'] = $member_row['club_id']; 
+                                return 'Executive Member'; 
+                            }
+                        }
+                        
+                        return 'student'; 
+                    }
+                }
+            }
+            return false;
+        }
+    }
+}
 
-  if (isset($_POST['submit'])) {
-      $email = $_POST['Email'];
-      $password = $_POST['Password'];
+if (isset($_POST['submit'])) {
+    $email = $_POST['Email'];
+    $password = $_POST['Password'];
 
-      if (isset($con)) {
-          $user = new User($con);
-          $auth_result = $user->authenticate($email, $password);
+    if (isset($con)) {
+        $user = new User($con);
+        $auth_result = $user->authenticate($email, $password);
 
-          if ($auth_result) {
-              if ($auth_result === 'admin') {
-                  header("Location: admin_dashboard.php");
-              } 
-              elseif ($auth_result === 'Executive Member') {
-                  header("Location: Club_dashboard.php");
-              } 
-              elseif ($auth_result === 'student'){
-                  header("Location: User_dashboard.php"); 
-              }
-              exit();
-          } else {
-              $_SESSION['login_error'] = "Invalid email or password!";
-              header("Location: homepage.php");
-              exit();
-          }
-      }
-  }
+        if ($auth_result) {
+            if ($auth_result === 'admin') {
+                header("Location: admin_dashboard.php");
+            } 
+            elseif ($auth_result === 'Executive Member') {
+                header("Location: Club_dashboard.php");
+            } 
+            elseif ($auth_result === 'student') {
+                header("Location: User_dashboard_.php"); 
+            }
+            elseif ($auth_result === 'unverified') {
+                $otp = sprintf("%06d", mt_rand(1, 999999));
+                $otp_expiry = date("Y-m-d H:i:s", strtotime('+5 minutes'));
+                
+                $stmt = $con->prepare("UPDATE user SET otp_code = ?, otp_expiry = ? WHERE email = ?");
+                $stmt->bind_param("sss", $otp, $otp_expiry, $email);
+                if ($stmt->execute()) {
+                    include_once 'mailer.php';
+                    sendVerificationEmail($email, $otp, 'verification');
+                }
+                
+                header("Location: verify.php?email=" . urlencode($email));
+            }
+            exit();
+        } else {
+            $_SESSION['login_error'] = "Invalid email or password!";
+            header("Location: homepage.php");
+            exit();
+        }
+    }
+}
 ?>

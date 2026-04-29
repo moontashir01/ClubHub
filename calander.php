@@ -1,12 +1,8 @@
 <?php
-$host = "localhost";
-$user = "root";
-$pass = "";
-$dbname = "club_hub";
-$port = 3308; 
+include 'connection.php';
 
 mysqli_report(MYSQLI_REPORT_OFF);
-$conn = new mysqli($host, $user, $pass, $dbname, $port);
+$conn = new mysqli($db_server, $db_user, $db_pass, $db_name, $port);
 
 if ($conn->connect_error) {
     die("Database Connection Failed: " . $conn->connect_error);

@@ -5,15 +5,15 @@ if (session_status() === PHP_SESSION_NONE) {
 
 include 'connection.php';
 
-// ডাটাবেস কানেকশন 
-$conn = new mysqli($host, $user, $password, $dbname, 3308);
+
+$conn = new mysqli($db_server, $db_user, $db_pass, $db_name, $port);
 
 if ($conn->connect_error) {
     die("Database Connection failed: " . $conn->connect_error);
 }
 
-// শুধুমাত্র Approved বুকিংগুলো আনার কুয়েরি
-$sql = "SELECT * FROM room_bookings WHERE status='Approved' OR status='approved' ORDER BY booking_date DESC, start_time ASC";
+// এখানে WHERE কন্ডিশন সরিয়ে দেওয়া হয়েছে যাতে সব স্ট্যাটাসের ডাটা আসে
+$sql = "SELECT * FROM room_bookings ORDER BY booking_date DESC, start_time ASC";
 $result = $conn->query($sql);
 ?>
 
@@ -22,7 +22,7 @@ $result = $conn->query($sql);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Approved Room Bookings</title>
+    <title>Room Bookings Schedule</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -43,7 +43,6 @@ $result = $conn->query($sql);
             margin: 0 auto;
         }
         
-        /* 🔴 New: Premium Back Button */
         .top-nav {
             display: flex;
             justify-content: space-between;
@@ -62,7 +61,7 @@ $result = $conn->query($sql);
             font-size: 0.95rem;
             font-weight: 500;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px); /* Glassmorphism effect */
+            backdrop-filter: blur(10px);
             transition: all 0.3s ease;
         }
         .back-btn:hover {
@@ -70,10 +69,9 @@ $result = $conn->query($sql);
             color: white;
             border-color: transparent;
             box-shadow: 0 4px 15px rgba(56, 189, 248, 0.4);
-            transform: translateX(-5px); /* Hover slide effect */
+            transform: translateX(-5px);
         }
 
-        /* 🔴 New: Live Pulse Indicator */
         .live-status {
             display: flex;
             align-items: center;
@@ -99,7 +97,6 @@ $result = $conn->query($sql);
             100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
         }
 
-        /* Header Section */
         .header {
             text-align: center;
             margin-bottom: 50px;
@@ -114,75 +111,70 @@ $result = $conn->query($sql);
         }
         .header p { color: #94a3b8; font-size: 1rem; }
 
-        /* Grid Layout for Cards */
         .grid-container {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
             gap: 25px;
         }
 
-        /* Beautiful Card Design */
         .card {
             background: #1e293b;
             border-radius: 16px;
             padding: 25px;
             border: 1px solid #334155;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Bouncy hover */
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             position: relative;
             overflow: hidden;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            /* 🔴 New: Entrance Animation */
             opacity: 0;
             transform: translateY(30px);
             animation: fadeUpIn 0.6s ease forwards;
         }
         
-        /* Animation Keyframes */
         @keyframes fadeUpIn {
             to { opacity: 1; transform: translateY(0); }
         }
 
         .card:hover {
             transform: translateY(-10px) scale(1.02);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px rgba(56, 189, 248, 0.2);
-            border-color: #38bdf8;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
         }
         
-        /* Top Accent Line */
+        /* Top border color based on status */
         .card::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: linear-gradient(to right, #22c55e, #10b981);
+            top: 0; left: 0; width: 100%; height: 4px;
         }
+        .card.approved::before { background: linear-gradient(to right, #22c55e, #10b981); }
+        .card.pending::before { background: linear-gradient(to right, #f59e0b, #d97706); }
+        .card.rejected::before { background: linear-gradient(to right, #ef4444, #b91c1c); }
+        .card.approved:hover { border-color: #22c55e; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px rgba(34, 197, 94, 0.2); }
+        .card.pending:hover { border-color: #f59e0b; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px rgba(245, 158, 11, 0.2); }
+        .card.rejected:hover { border-color: #ef4444; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px rgba(239, 68, 68, 0.2); }
 
-        /* Status Badge */
         .badge {
             position: absolute;
             top: 20px;
             right: 20px;
-            background: rgba(34, 197, 94, 0.15);
-            color: #4ade80;
             padding: 6px 14px;
             border-radius: 20px;
             font-size: 0.75rem;
             font-weight: 600;
-            border: 1px solid rgba(34, 197, 94, 0.3);
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            box-shadow: 0 0 10px rgba(34, 197, 94, 0.2);
         }
+        /* Badge colors based on status */
+        .badge.approved { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+        .badge.pending { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .badge.rejected { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
 
-        /* Card Typography */
         .club-name {
             font-size: 1.4rem;
             font-weight: 600;
             color: #f8fafc;
             margin-bottom: 5px;
-            padding-right: 80px; 
+            padding-right: 90px; 
         }
         .room-name {
             font-size: 0.95rem;
@@ -194,7 +186,6 @@ $result = $conn->query($sql);
             font-weight: 500;
         }
 
-        /* Details Box inside Card */
         .details-box {
             background: rgba(15, 23, 42, 0.6);
             padding: 15px;
@@ -212,7 +203,6 @@ $result = $conn->query($sql);
         .detail-label { color: #64748b; display: flex; align-items: center; gap: 6px; }
         .detail-value { color: #e2e8f0; font-weight: 500; text-align: right; max-width: 60%; }
 
-        /* Empty State */
         .empty-state {
             grid-column: 1 / -1;
             text-align: center;
@@ -230,8 +220,8 @@ $result = $conn->query($sql);
 
 <div class="container">
     <div class="top-nav">
-        <a href="Club_dashboard.php" class="back-btn">
-            <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+        <a href="room.php" class="back-btn">
+            <i class="fa-solid fa-arrow-left"></i> Back
         </a>
         
         <div class="live-status">
@@ -240,14 +230,14 @@ $result = $conn->query($sql);
     </div>
 
     <div class="header">
-        <h1>Approved Room Schedule</h1>
-        <p>List of all officially approved room bookings and events.</p>
+        <h1>Room Bookings Status</h1>
+        <p>List of all room bookings and their current approval status.</p>
     </div>
 
     <div class="grid-container">
         <?php
         if ($result && $result->num_rows > 0) {
-            $delay = 0; // অ্যানিমেশনের ডিলের জন্য
+            $delay = 0; 
             while ($row = $result->fetch_assoc()) {
                 $clubName = htmlspecialchars($row['club_name'] ?? $row['club'] ?? 'Unknown Club');
                 $roomName = htmlspecialchars($row['room_name'] ?? $row['room_no'] ?? $row['room'] ?? $row['select_room'] ?? 'Unknown Room'); 
@@ -256,12 +246,23 @@ $result = $conn->query($sql);
                 $duration = htmlspecialchars($row['duration'] ?? $row['time_duration'] ?? $row['booking_duration'] ?? 'N/A');
                 $purpose = htmlspecialchars($row['purpose'] ?? 'No purpose specified');
                 
+                // Status Handling
+                $status = ucfirst(strtolower($row['status'] ?? 'Pending'));
+                $statusClass = strtolower($status);
+                
+                // Icon selection based on status
+                $icon = "fa-clock"; // Default for pending
+                if ($statusClass == 'approved') $icon = "fa-check";
+                if ($statusClass == 'rejected') $icon = "fa-xmark";
+
                 $formattedDate = ($date) ? date('l, d M Y', strtotime($date)) : 'N/A';
                 $formattedTime = ($time) ? date('h:i A', strtotime($time)) : 'N/A';
         ?>
         
-        <div class="card" style="animation-delay: <?php echo $delay; ?>s;">
-            <div class="badge"><i class="fa-solid fa-check"></i> Approved</div>
+        <div class="card <?php echo $statusClass; ?>" style="animation-delay: <?php echo $delay; ?>s;">
+            <div class="badge <?php echo $statusClass; ?>">
+                <i class="fa-solid <?php echo $icon; ?>"></i> <?php echo $status; ?>
+            </div>
             
             <div class="club-name"><?php echo $clubName; ?></div>
             <div class="room-name"><i class="fa-solid fa-door-open"></i> <?php echo $roomName; ?></div>
@@ -288,15 +289,15 @@ $result = $conn->query($sql);
         </div>
 
         <?php 
-                $delay += 0.1; // প্রতিটি কার্ড 0.1 সেকেন্ড পর পর আসবে
+                $delay += 0.1; 
             }
         } else {
         ?>
         
         <div class="empty-state">
             <i class="fa-regular fa-calendar-xmark"></i>
-            <h3>No Approved Bookings Yet</h3>
-            <p>Once an admin approves a room booking, it will appear beautifully right here.</p>
+            <h3>No Bookings Found</h3>
+            <p>There are currently no room booking requests available.</p>
         </div>
         
         <?php } ?>

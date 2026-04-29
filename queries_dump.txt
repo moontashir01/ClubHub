@@ -1,0 +1,332 @@
+﻿admin_dashboard.php:23: $queryClubs = "SELECT COUNT(*) as count FROM clubs";
+admin_dashboard.php:31: $queryBookings = "SELECT COUNT(*) as count FROM room_bookings";
+admin_dashboard.php:39: $queryVolunteers = "SELECT COUNT(*) as count FROM volunteer_requests";
+admin_dashboard.php:276: <select class="admin-input" required>
+admin_dashboard.php:277: <option value="">-- Select a Club --</option>
+admin_dashboard.php:280: </select>
+Club_dashboard.php:69: SELECT *
+Club_dashboard.php:91: SELECT COALESCE(SUM(GREATEST(r.requested_count - IFNULL(a.assigned_count, 0), 0)), 0) AS pending
+Club_dashboard.php:95: SELECT vr.club_id, vr.event_id, COUNT(*) AS assigned_count
+Club_dashboard.php:158: SELECT club_members.student_id as 'SID',
+club_info_display.php:7: $query = mysqli_query($con, "SELECT club_name, club_data FROM clubs WHERE club_id = $club_id");
+club_info_display.php:250: const slides = document.querySelectorAll('.slide');
+club_info_editor.php:13: if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_club'])) {
+club_info_editor.php:69: $update = "UPDATE clubs SET club_data = '$final_json' WHERE club_id = $club_id";
+club_info_editor.php:71: if (mysqli_query($con, $update)) {
+club_info_editor.php:72: $msg = "<div class='toast success'>Club Updated Successfully! âœ“</div>";
+club_info_editor.php:78: // Fetch selected club data
+club_info_editor.php:79: $selected_id = isset($_GET['edit_id']) ? (int)$_GET['edit_id'] : 0;
+club_info_editor.php:83: if ($selected_id > 0) {
+club_info_editor.php:84: $res = mysqli_query($con, "SELECT club_name, club_data FROM clubs WHERE club_id = $selected_id");
+club_info_editor.php:112: /* Vertical List for Selection */
+club_info_editor.php:150: <?php if ($selected_id === 0): ?>
+club_info_editor.php:159: <h1>Select Club to Edit</h1>
+club_info_editor.php:162: $clubs = mysqli_query($con, "SELECT club_id, club_name FROM clubs ORDER BY club_name");
+club_info_editor.php:175: <a href="club_info_editor.php" style="color:white; text-decoration:none; margin-right:20px; font-weight:bold;">â† Select Another</a>
+club_info_editor.php:176: <input type="hidden" name="club_id" value="<?= $selected_id ?>">
+club_info_editor.php:177: <button type="submit" name="update_club" class="nav-btn">Save Changes</button>
+club_info_editor.php:268: let span = input.parentElement.querySelector('span');
+club_info_editor.php:314: const toast = document.querySelector('.toast');
+eventlogs.php:16: $clubStmt = $con->prepare("\n        SELECT c.club_id, c.club_name\n        FROM `user` u\n        INNER JOIN students s ON s.student_email = u.email\n        INNER JOIN club_members cm ON cm.student_id = s.student_id AND cm.active = 1\n        INNER JOIN clubs c ON c.club_id = cm.club_id\n        WHERE u.email = ?\n          AND UPPER(cm.Role) LIKE 'EB%'\n        LIMIT 1\n    ");
+eventlogs.php:29: $nameStmt = $con->prepare("SELECT club_name FROM clubs WHERE club_id = ? LIMIT 1");
+eventlogs.php:38: $messageSelect = $hasSecurityMessage ? "e.security_message" : "NULL AS security_message";
+eventlogs.php:40: SELECT
+eventlogs.php:47: $messageSelect
+event_studio.php:11: SELECT e.event_id, e.event_name
+event_studio.php:57: $sql = "INSERT INTO event_configs (event_id, config_name, config_data, slider_endtime)
+event_studio.php:59: ON DUPLICATE KEY UPDATE
+event_studio.php:116: input, textarea, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; outline: none; }
+event_studio.php:139: <div class="group"><label>Link to Event (Required)</label><select id="eventSelect" onchange="this.classList.remove('required-error'); updateUI()"><option value="">-- Select Event --</option><?php foreach ($events_list as $ev): ?><option value="<?= $ev['event_id'] ?>"><?= htmlspecialchars($ev['event_name']) ?></option><?php endforeach; ?></select></div>
+event_studio.php:140: <div class="group"><label>Slider End Time (Required)</label><input type="datetime-local" id="endTimeIn" onchange="this.classList.remove('required-error'); updateUI()"></div>
+event_studio.php:143: <div class="group"><label>Event Name</label><input type="text" id="nameIn" placeholder="Summer Fest" oninput="this.classList.remove('required-error'); updateUI()"></div>
+event_studio.php:145: <select id="fontSelect" onchange="updateUI()">
+event_studio.php:149: </select>
+event_studio.php:151: <div class="group"><label>Event Name Color</label><input type="color" id="colorIn" value="#ffffff" oninput="updateUI()" style="height:40px; padding:2px;"></div>
+event_studio.php:152: <div class="group"><label>Description</label><input type="text" id="descIn" oninput="this.classList.remove('required-error'); updateUI()"></div>
+event_studio.php:156: <label class="check-item"><input type="checkbox" id="regToggle" onchange="if(this.checked){document.getElementById('tktToggle').checked = false;} updateUI()"> Register Button</label>
+event_studio.php:158: <label class="check-item" style="margin-top:5px;"><input type="checkbox" id="tktToggle" onchange="if(this.checked){document.getElementById('regToggle').checked = false;} updateUI()"> Ticket Button</label>
+event_studio.php:166: <textarea id="detailIn" rows="6" oninput="this.classList.remove('required-error'); updateUI()" placeholder="Use [+H] Text [H+] for headers"></textarea>
+event_studio.php:170: <input type="range" id="hSizeRange" min="10" max="60" value="22" oninput="updateHSize()">
+event_studio.php:297: function updateHSize() {
+event_studio.php:305: const start = txt.selectionStart;
+event_studio.php:306: const end = txt.selectionEnd;
+event_studio.php:309: updateUI();
+event_studio.php:435: let input = f.type === 'dropdown' ? `<select style="width:100%; padding:12px; border:1px solid #ddd; border-radius:6px; background:${fBg}; color:${fTxt};">${f.options.split('\n').map(o => `<option>${o.trim()}</option>`).join('')}</select>` : `<input type="text" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:6px; background:${fBg}; color:${fTxt};">`;
+event_studio.php:459: let input = f.type === 'dropdown' ? `<select style="width:100%; padding:12px; border:1px solid #ddd; border-radius:6px; background:${fBg}; color:${fTxt};">${f.options.split('\n').map(o => `<option>${o.trim()}</option>`).join('')}</select>` : `<input type="text" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:6px; background:${fBg}; color:${fTxt};">`;
+event_studio.php:465: function updateUI() {
+event_studio.php:469: nameEl.style.fontFamily = document.getElementById('fontSelect').value;
+event_studio.php:480: const eSelect = document.getElementById('eventSelect'),
+event_studio.php:489: [eSelect, eTime, nIn, dIn, detIn, dz].forEach(el => el.classList.remove('required-error'));
+event_studio.php:492: if(!eSelect.value){ eSelect.classList.add('required-error'); error=true; }
+event_studio.php:510: font: document.getElementById('fontSelect').value,
+event_studio.php:539: formData.append('event_id', eSelect.value);
+fixpass.php:8: $sql = "UPDATE user SET Password = ? WHERE email = ?";
+fixpass.php:13: echo "Password updated and hashed successfully! Now try logging in with: password123";
+forgot_password.php:14: $stmt = $con->prepare("SELECT email FROM user WHERE email = ?");
+forgot_password.php:24: // Update user with OTP
+forgot_password.php:25: $update_stmt = $con->prepare("UPDATE user SET otp_code = ?, otp_expiry = ? WHERE email = ?");
+forgot_password.php:26: $update_stmt->bind_param("sss", $otp, $otp_expiry, $email);
+forgot_password.php:28: if ($update_stmt->execute()) {
+homepage.php:270: const slides = document.querySelectorAll('.slide');
+login.php:12: // 1. Updated query to use 'portal' instead of 'Role' and check 'is_verified'
+login.php:13: $stmt = $this->db->prepare("SELECT Name, Password, portal, is_verified FROM user WHERE email = ?");
+login.php:40: SELECT cm.Role,cm.club_id
+manage_members.php:15: SELECT c.club_id, c.club_name
+manage_members.php:112: $clubStmt = $con->prepare('SELECT club_name FROM clubs WHERE club_id = ? LIMIT 1');
+manage_members.php:141: $checkRoleTableSql = 'SELECT 1 FROM club_role_definitions LIMIT 1';
+manage_members.php:146: 'SELECT role_id, role_name
+manage_members.php:169: 'SELECT DISTINCT Role AS role_name
+manage_members.php:259: 'INSERT INTO club_role_definitions (club_id, role_name, is_active)
+manage_members.php:261: ON DUPLICATE KEY UPDATE
+manage_members.php:295: setMembersFlash('error', 'Invalid role selected.');
+manage_members.php:300: $findRoleStmt = $con->prepare('SELECT role_name FROM club_role_definitions WHERE role_id = ? AND club_id = ? LIMIT 1');
+manage_members.php:314: $usageStmt = $con->prepare('SELECT COUNT(*) AS total FROM club_members WHERE club_id = ? AND Role = ? AND active = 1');
+manage_members.php:327: $removeRoleStmt = $con->prepare('UPDATE club_role_definitions SET is_active = 0 WHERE role_id = ? AND club_id = ?');
+manage_members.php:351: $studentStmt = $con->prepare('SELECT student_id FROM students WHERE student_id = ? LIMIT 1');
+manage_members.php:363: $activeStmt = $con->prepare('SELECT member_id FROM club_members WHERE club_id = ? AND student_id = ? AND active = 1 LIMIT 1');
+manage_members.php:375: $inactiveStmt = $con->prepare('SELECT member_id FROM club_members WHERE club_id = ? AND student_id = ? AND active = 0 ORDER BY member_id DESC LIMIT 1');
+manage_members.php:383: $reactivateStmt = $con->prepare('UPDATE club_members SET Role = ?, active = 1 WHERE member_id = ? AND club_id = ?');
+manage_members.php:389: $insertStmt = $con->prepare('INSERT INTO club_members (student_id, club_id, Role, active) VALUES (?, ?, ?, 1)');
+manage_members.php:400: if ($action === 'update_role') {
+manage_members.php:405: setMembersFlash('error', 'Invalid role update request.');
+manage_members.php:410: $memberStmt = $con->prepare('SELECT Role FROM club_members WHERE member_id = ? AND club_id = ? AND active = 1 LIMIT 1');
+manage_members.php:424: setMembersFlash('success', 'Role is already set to the selected value.');
+manage_members.php:435: $updateStmt = $con->prepare('UPDATE club_members SET Role = ? WHERE member_id = ? AND club_id = ? AND active = 1');
+manage_members.php:436: $updateStmt->bind_param('sii', $newRole, $memberId, $clubId);
+manage_members.php:437: $updateStmt->execute();
+manage_members.php:438: $updateStmt->close();
+manage_members.php:440: setMembersFlash('success', 'Member role updated successfully.');
+manage_members.php:449: setMembersFlash('error', 'Invalid member selected.');
+manage_members.php:454: $removeStmt = $con->prepare('UPDATE club_members SET active = 0 WHERE member_id = ? AND club_id = ? AND active = 1');
+manage_members.php:482: 'SELECT
+manage_members.php:509: "SELECT
+manage_members.php:744: .role-select {
+manage_members.php:765: .role-select option {
+manage_members.php:770: .role-select-compact {
+manage_members.php:929: body.light-theme .role-select {
+manage_members.php:935: body.light-theme .role-select {
+manage_members.php:941: body.light-theme .role-select option {
+manage_members.php:1027: <span class="role-card-subtitle">Create and manage role options used in member role updates.</span>
+manage_members.php:1082: <select class="role-select role-select-compact" name="role" aria-label="Role when adding member">
+manage_members.php:1084: <option value="<?php echo htmlspecialchars($roleOption); ?>" <?php echo $roleOption === 'Member' ? 'selected' : ''; ?>>
+manage_members.php:1088: </select>
+manage_members.php:1139: <input type="hidden" name="action" value="update_role">
+manage_members.php:1142: <select class="role-select" name="role" aria-label="Update member role">
+manage_members.php:1144: <option value="<?php echo htmlspecialchars($currentRole); ?>" selected>
+manage_members.php:1149: <option value="<?php echo htmlspecialchars($roleOption); ?>" <?php echo $roleOption === $currentRole ? 'selected' : ''; ?>>
+manage_members.php:1153: </select>
+manage_members.php:1154: <button class="btn btn-secondary" type="submit">Update</button>
+manage_members.php:1204: <p class="roles-help"><strong>Current available roles</strong> (same as role update dropdown):</p>
+manage_members.php:1275: const closeRolesButtons = document.querySelectorAll('[data-close-roles-modal]');
+reqVolunteer.php:25: $event_query = @mysqli_query($con, "SELECT event_id, event_name, event_date, event_creator FROM events WHERE event_availablity = 1 AND event_created_by = 'admin' ORDER BY event_date DESC");
+reqVolunteer.php:33: $club_query = @mysqli_query($con, "SELECT club_id, club_name FROM clubs ORDER BY club_name");
+reqVolunteer.php:40: $selected_event_id = 0;
+reqVolunteer.php:42: $selected_event_id = intval($_GET['event_id']);
+reqVolunteer.php:45: $selected_event_id = intval($_POST['event_id'] ?? 0);
+reqVolunteer.php:47: if (!$selected_event_id && !empty($events)) {
+reqVolunteer.php:48: $selected_event_id = intval($events[0]['event_id']);
+reqVolunteer.php:69: UPDATE volunteer_request_club r
+reqVolunteer.php:71: SELECT club_id, event_id, COUNT(*) AS assigned_count
+reqVolunteer.php:83: r.updated_at = CURRENT_TIMESTAMP
+reqVolunteer.php:95: if (!$selected_event_id) {
+reqVolunteer.php:96: $flash = 'Please select an event to continue.';
+reqVolunteer.php:119: INSERT INTO volunteer_request_club (event_id, club_id, requested_count, note, deadline, status)
+reqVolunteer.php:121: ON DUPLICATE KEY UPDATE
+reqVolunteer.php:126: updated_at = CURRENT_TIMESTAMP
+reqVolunteer.php:128: $delete_stmt = $con->prepare("DELETE FROM volunteer_request_club WHERE event_id = ? AND club_id = ?");
+reqVolunteer.php:136: $upsert->bind_param("iiisss", $selected_event_id, $club_id, $count, $note, $deadline, $status);
+reqVolunteer.php:139: $delete_stmt->bind_param("ii", $selected_event_id, $club_id);
+reqVolunteer.php:143: sync_request_statuses($con, $selected_event_id);
+reqVolunteer.php:144: redirect_with_msg($selected_event_id, 'Volunteer requests saved.');
+reqVolunteer.php:148: redirect_with_msg($selected_event_id, 'Invalid club for cancellation.', 'error');
+reqVolunteer.php:152: SELECT requested_count, status
+reqVolunteer.php:157: $request_check->bind_param("ii", $selected_event_id, $club_id);
+reqVolunteer.php:162: redirect_with_msg($selected_event_id, 'No request found for this club.', 'warning');
+reqVolunteer.php:166: SELECT COUNT(*) AS assigned_count
+reqVolunteer.php:170: $assigned_stmt->bind_param("ii", $selected_event_id, $club_id);
+reqVolunteer.php:180: redirect_with_msg($selected_event_id, 'Only pending requests can be cancelled.', 'warning');
+reqVolunteer.php:186: UPDATE volunteer_request_club
+reqVolunteer.php:187: SET requested_count = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+reqVolunteer.php:190: $cancel_stmt->bind_param("isii", $new_requested_count, $cancel_status, $selected_event_id, $club_id);
+reqVolunteer.php:196: redirect_with_msg($selected_event_id, $message);
+reqVolunteer.php:198: $clear_requests = $con->prepare("DELETE FROM volunteer_request_club WHERE event_id = ?");
+reqVolunteer.php:199: $clear_requests->bind_param("i", $selected_event_id);
+reqVolunteer.php:202: $clear_assignments = $con->prepare("DELETE FROM volunteer_requests WHERE event_id = ?");
+reqVolunteer.php:203: $clear_assignments->bind_param("i", $selected_event_id);
+reqVolunteer.php:206: redirect_with_msg($selected_event_id, 'All volunteer requests and assignments cleared for this event.', 'warning');
+reqVolunteer.php:212: $selected_event = null;
+reqVolunteer.php:214: if (intval($ev['event_id']) === $selected_event_id) {
+reqVolunteer.php:215: $selected_event = $ev;
+reqVolunteer.php:231: if ($selected_event_id) {
+reqVolunteer.php:232: sync_request_statuses($con, $selected_event_id);
+reqVolunteer.php:235: SELECT r.club_id, r.requested_count, r.note, r.deadline, r.status, c.club_name
+reqVolunteer.php:241: $request_query->bind_param("i", $selected_event_id);
+reqVolunteer.php:258: SELECT club_id, COUNT(*) AS assigned_count
+reqVolunteer.php:263: $assigned_query->bind_param("i", $selected_event_id);
+reqVolunteer.php:272: SELECT c.club_name, s.full_name, s.student_email, s.student_id, COALESCE(cm.Role, 'Member') AS club_role
+reqVolunteer.php:280: $assignment_query->bind_param("i", $selected_event_id);
+reqVolunteer.php:373: .builder-row select { appearance: none; }
+reqVolunteer.php:505: <div class="stat-value"><?php echo $selected_event_id ? $total_requested : 0; ?></div>
+reqVolunteer.php:512: <div class="stat-value"><?php echo $selected_event_id ? $total_assigned : 0; ?></div>
+reqVolunteer.php:519: <div class="stat-value"><?php echo $selected_event_id ? count($pending_clubs) : 0; ?></div>
+reqVolunteer.php:530: <form method="post" id="request-form" data-event="<?php echo $selected_event_id; ?>">
+reqVolunteer.php:532: <label for="event_id">Select Event</label>
+reqVolunteer.php:533: <select class="admin-input" name="event_id" id="event_id" required>
+reqVolunteer.php:536: <option value="<?php echo $ev['event_id']; ?>" <?php echo ($selected_event_id == $ev['event_id']) ? 'selected' : ''; ?>>
+reqVolunteer.php:540: </select>
+reqVolunteer.php:569: <input type="hidden" name="event_id" value="<?php echo $selected_event_id; ?>">
+reqVolunteer.php:570: <button type="submit" class="danger-btn" <?php echo $selected_event_id ? '' : 'disabled'; ?>>Clear Requests for Event</button>
+reqVolunteer.php:578: <?php if (!$selected_event_id): ?>
+reqVolunteer.php:579: <div class="empty-state">Select an event to see status.</div>
+reqVolunteer.php:625: <input type="hidden" name="event_id" value="<?php echo $selected_event_id; ?>">
+reqVolunteer.php:655: <?php if (!$selected_event_id): ?>
+reqVolunteer.php:656: <div class="empty-state">Select an event to see pending clubs.</div>
+reqVolunteer.php:682: <?php if (!$selected_event_id): ?>
+reqVolunteer.php:683: <div class="empty-state">Select an event to see volunteer assignments.</div>
+reqVolunteer.php:735: const eventSelect = document.getElementById('event_id');
+reqVolunteer.php:740: return Array.from(builder.querySelectorAll('.builder-row')).map(row => {
+reqVolunteer.php:741: const select = row.querySelector('select[name="club_id[]"]');
+reqVolunteer.php:742: const input = row.querySelector('input[name="club_count[]"]');
+reqVolunteer.php:744: club_id: select ? select.value : '',
+reqVolunteer.php:779: function buildRow(selectedId = '', countValue = '') {
+reqVolunteer.php:783: const select = document.createElement('select');
+reqVolunteer.php:784: select.className = 'admin-input';
+reqVolunteer.php:785: select.name = 'club_id[]';
+reqVolunteer.php:786: select.required = true;
+reqVolunteer.php:790: defaultOption.textContent = '-- Select Club --';
+reqVolunteer.php:791: select.appendChild(defaultOption);
+reqVolunteer.php:797: if (String(club.club_id) === String(selectedId)) {
+reqVolunteer.php:798: option.selected = true;
+reqVolunteer.php:800: select.appendChild(option);
+reqVolunteer.php:825: select.addEventListener('change', () => {
+reqVolunteer.php:831: row.appendChild(select);
+reqVolunteer.php:840: const selected = new Set();
+reqVolunteer.php:841: builder.querySelectorAll('select[name="club_id[]"]').forEach(sel => {
+reqVolunteer.php:843: selected.add(sel.value);
+reqVolunteer.php:847: builder.querySelectorAll('select[name="club_id[]"]').forEach(sel => {
+reqVolunteer.php:851: option.disabled = option.value !== current && selected.has(option.value);
+reqVolunteer.php:879: if (eventSelect) {
+reqVolunteer.php:880: eventSelect.addEventListener('change', () => {
+reqVolunteer.php:883: const nextId = eventSelect.value;
+reset_password.php:25: $stmt = $con->prepare("UPDATE user SET password = ? WHERE email = ?");
+reset_password.php:39: $error = "Failed to update password.";
+reset_password.php:83: <button type="submit" class="btn">Update Password</button>
+room_booking.php:13: $sql = "INSERT INTO room_bookings (room_id, club_name, booking_date, start_time, end_time, purpose)
+room_booking.php:58: input, select { width: 100%; padding: 12px; border: none; border-radius: 8px; background-color: #fdf5c9; color: #000; font-size: 14px; font-weight: bold; outline: none; box-sizing: border-box; }
+room_booking.php:90: <label>Select Room</label>
+room_booking.php:91: <select name="room_id" id="roomSelect" required>
+room_booking.php:94: $rooms = mysqli_query($con, "SELECT * FROM rooms");
+room_booking.php:99: </select>
+room_booking.php:104: <select name="club_name" required>
+room_booking.php:107: $clubs = mysqli_query($con, "SELECT * FROM clubs");
+room_booking.php:112: </select>
+room_booking.php:144: document.getElementById('roomSelect').addEventListener('change', function() {
+room_booking.php:145: var selectedText = this.options[this.selectedIndex].text;
+room_booking.php:151: var formattedName = selectedText.replace(/\s+/g, '').toLowerCase();
+securityapproval.php:13: UPDATE events
+securityapproval.php:33: UPDATE events
+securityapproval.php:49: UPDATE events
+securityapproval.php:70: SELECT
+securityapproval.php:214: const rejectButtons = document.querySelectorAll('.reject-btn');
+sendVolunteer.php:11: SELECT clubs.club_id, clubs.club_name
+sendVolunteer.php:42: UPDATE volunteer_request_club r
+sendVolunteer.php:44: SELECT club_id, event_id, COUNT(*) AS assigned_count
+sendVolunteer.php:56: r.updated_at = CURRENT_TIMESTAMP
+sendVolunteer.php:69: SELECT r.event_id, r.requested_count, r.note, r.deadline, e.event_name, e.event_date
+sendVolunteer.php:85: $selected_event_id = 0;
+sendVolunteer.php:87: $selected_event_id = intval($_GET['event_id']);
+sendVolunteer.php:89: $selected_event_id = intval($event_requests[0]['event_id']);
+sendVolunteer.php:93: $selected_event_id = intval($_POST['event_id'] ?? 0);
+sendVolunteer.php:102: } elseif (!$selected_event_id) {
+sendVolunteer.php:103: $flash = 'Please select an event to continue.';
+sendVolunteer.php:107: SELECT 1
+sendVolunteer.php:111: $check_stmt->bind_param("ii", $selected_event_id, $club_id);
+sendVolunteer.php:119: $flash = 'Select at least one member to send.';
+sendVolunteer.php:122: $requested_stmt = $con->prepare("SELECT requested_count FROM volunteer_request_club WHERE event_id = ? AND club_id = ?");
+sendVolunteer.php:123: $requested_stmt->bind_param("ii", $selected_event_id, $club_id);
+sendVolunteer.php:129: SELECT COUNT(*) AS cnt
+sendVolunteer.php:133: $assigned_stmt->bind_param("ii", $selected_event_id, $club_id);
+sendVolunteer.php:139: $selected_count = count($member_ids);
+sendVolunteer.php:144: } elseif ($selected_count > $remaining_count) {
+sendVolunteer.php:145: $flash = "You selected $selected_count members but only $remaining_count are still needed. Please adjust your selection.";
+sendVolunteer.php:148: $check_existing = $con->prepare("SELECT 1 FROM volunteer_requests WHERE event_id = ? AND student_id = ?");
+sendVolunteer.php:149: $select_member = $con->prepare("SELECT student_id, full_name, student_email FROM students WHERE student_id = ?");
+sendVolunteer.php:151: INSERT INTO volunteer_requests (club_id, full_name, student_id, student_email, event_id)
+sendVolunteer.php:162: $check_existing->bind_param("is", $selected_event_id, $member_id);
+sendVolunteer.php:168: $select_member->bind_param("s", $member_id);
+sendVolunteer.php:169: $select_member->execute();
+sendVolunteer.php:170: $member_result = $select_member->get_result()->fetch_assoc();
+sendVolunteer.php:181: $selected_event_id
+sendVolunteer.php:189: sync_single_request_status($con, $selected_event_id, $club_id);
+sendVolunteer.php:192: redirect_with_msg($selected_event_id, "Sent $added volunteer(s) for this event.");
+sendVolunteer.php:194: redirect_with_msg($selected_event_id, "No new volunteers were added. Selected member(s) may already be assigned.", 'warning');
+sendVolunteer.php:201: $selected_request = null;
+sendVolunteer.php:203: if (intval($req['event_id']) === $selected_event_id) {
+sendVolunteer.php:204: $selected_request = $req;
+sendVolunteer.php:210: if ($club_id && $selected_event_id) {
+sendVolunteer.php:211: sync_single_request_status($con, $selected_event_id, $club_id);
+sendVolunteer.php:214: SELECT COUNT(*) AS cnt
+sendVolunteer.php:218: $assigned_stmt->bind_param("ii", $selected_event_id, $club_id);
+sendVolunteer.php:224: $requested_count = $selected_request ? intval($selected_request['requested_count']) : 0;
+sendVolunteer.php:228: if ($club_id && $selected_event_id) {
+sendVolunteer.php:230: SELECT s.student_id, s.full_name, s.student_email, cm.Role
+sendVolunteer.php:235: AND s.student_id NOT IN (SELECT student_id FROM volunteer_requests WHERE event_id = ? AND club_id = ?)
+sendVolunteer.php:238: $members_stmt->bind_param("iii", $club_id, $selected_event_id, $club_id);
+sendVolunteer.php:300: <div class="page-sub">Manage volunteer responses for <?php echo htmlspecialchars($club_name); ?>. Select an event request and choose members to send.</div>
+sendVolunteer.php:314: <label class="input-label" for="event_id">Select Requested Event</label>
+sendVolunteer.php:315: <select class="input-control" name="event_id" id="event_id" onchange="this.form.submit()">
+sendVolunteer.php:317: <option value="<?php echo $req['event_id']; ?>" <?php echo ($selected_event_id == $req['event_id']) ? 'selected' : ''; ?>>
+sendVolunteer.php:321: </select>
+sendVolunteer.php:343: <p><?php echo htmlspecialchars($selected_request['note'] ?? 'No special notes.'); ?></p>
+sendVolunteer.php:344: <?php if (!empty($selected_request['deadline'])): ?>
+sendVolunteer.php:345: <p style="margin-top: 10px;"><small>Deadline: <?php echo htmlspecialchars($selected_request['deadline']); ?></small></p>
+sendVolunteer.php:351: <input type="hidden" name="event_id" value="<?php echo $selected_event_id; ?>">
+sendVolunteer.php:355: <p class="limit-note" id="limit-note">You can select up to <strong><?php echo $remaining_count; ?></strong> member(s).</p>
+sendVolunteer.php:359: <th>Select</th>
+sendVolunteer.php:377: <button type="submit" class="action-btn">Send Selected Volunteers</button>
+sendVolunteer.php:424: const sendForm = document.querySelector('form[data-remaining]');
+sendVolunteer.php:428: const checkboxes = Array.from(sendForm.querySelectorAll('input[name="member_ids[]"]'));
+sendVolunteer.php:430: const updateNote = () => {
+sendVolunteer.php:431: const selected = checkboxes.filter(cb => cb.checked).length;
+sendVolunteer.php:433: limitNote.innerHTML = `You can select up to <strong>${remaining}</strong> member(s). Selected <strong>${selected}</strong>.`;
+sendVolunteer.php:442: const selected = checkboxes.filter(item => item.checked).length;
+sendVolunteer.php:443: if (selected > remaining) {
+sendVolunteer.php:446: updateNote();
+sendVolunteer.php:450: updateNote();
+signup.php:23: $verify_query = mysqli_query($this->con, "SELECT email FROM user WHERE email='$email'");
+signup.php:24: $verify_query2 = mysqli_query($this->con, "SELECT student_id FROM students WHERE student_id='$student_id'");
+signup.php:41: // 1. Insert into 'user' first (Portal will use its DB default value)
+signup.php:42: $sql_user = "INSERT INTO `user` (email, Name, password, otp_code, otp_expiry, is_verified) VALUES ('$email', '$name', '$hashed_password', '$otp', '$otp_expiry', 0)";
+signup.php:47: // 2. Insert into 'students' (Foreign Key student_email checks for $email above)
+signup.php:48: $sql_student = "INSERT INTO `students` (student_id, full_name, student_email, DOB, contact)
+space_booking.php:19: $check_exists = $con->prepare("SELECT status FROM space_bookings WHERE club_id = ? AND booking_date = ? AND slot = ?");
+space_booking.php:26: $delete = $con->prepare("DELETE FROM space_bookings WHERE club_id = ? AND booking_date = ? AND slot = ?");
+space_booking.php:32: $insert = $con->prepare("INSERT INTO space_bookings (club_id, booking_date, slot, status) VALUES (?, ?, ?, ?)");
+space_booking.php:46: $query = "SELECT sb.slot, sb.status, sb.club_id, c.club_name
+space_booking.php:152: const currentSelectedDate = "<?php echo $booking_date; ?>";
+space_booking.php:188: btn.innerHTML += "<span>YOUR SELECTION<br>Pending</span><span>Click again to cancel</span>";
+space_booking.php:200: window.location.href = "?slot=" + args.id + "&date=" + currentSelectedDate;
+test.php:28: $check = $con->prepare("SELECT response_data FROM forms_responses WHERE event_id = ? AND user_email = ?");
+test.php:48: $cfg_query = mysqli_query($con, "SELECT config_name, config_data FROM event_configs WHERE event_id = $event_id");
+test.php:55: $sold_query = mysqli_query($con, "SELECT COUNT(*) as c FROM forms_responses WHERE event_id = $event_id AND response_data LIKE '%\"_form_type\":\"ticket\"%'");
+test.php:114: $stmt = $con->prepare("INSERT INTO forms_responses (event_id, user_email, response_data) VALUES (?, ?, ?)");
+test.php:129: $stmt = $con->prepare("INSERT INTO forms_responses (event_id, user_email, response_data) VALUES (?, ?, ?)");
+test.php:142: $sales_query = mysqli_query($con, "SELECT event_id, COUNT(*) as sold FROM forms_responses WHERE response_data LIKE '%\"_form_type\":\"ticket\"%' GROUP BY event_id");
+test.php:151: $query = "SELECT * FROM event_configs WHERE slider_endtime >= '$current_time' ORDER BY slider_endtime ASC";
+test.php:402: function updateTimers() {
+test.php:419: setInterval(updateTimers, 1000);
+test.php:420: updateTimers();
+test.php:444: `<select data-label="${f.label}" required style="background:${colors.fieldBg}; color:${colors.fieldTxt}; padding:12px; width:100%; border:1px solid rgba(0,0,0,0.1); border-radius:8px;">${f.options.split('\n').map(o => `<option>${o.trim()}</option>`).join('')}</select>` :
+test.php:472: `<select data-label="${f.label}" required style="background:${colors.fieldBg}; color:${colors.fieldTxt}; padding:12px; width:100%; border:1px solid rgba(0,0,0,0.1); border-radius:8px;">${f.options.split('\n').map(o => `<option>${o.trim()}</option>`).join('')}</select>` :
+test.php:491: const inputs = document.querySelectorAll(gridId + ' input, ' + gridId + ' select');
+test.php:524: const slides = document.querySelectorAll('.slide');
+test.php:525: const minis = document.querySelectorAll('.mini-card');
+User_dashboard.php:419: const slides = document.querySelectorAll('.slide');
+User_dashboard.php:421: const minis = document.querySelectorAll('.mini-card');
+verify.php:15: $stmt = $con->prepare("SELECT otp_code, otp_expiry, is_verified FROM user WHERE email = ?");
+verify.php:36: $update_stmt = $con->prepare("UPDATE user SET otp_code = NULL, otp_expiry = NULL WHERE email = ?");
+verify.php:37: $update_stmt->bind_param("s", $email);
+verify.php:38: if ($update_stmt->execute()) {
+verify.php:48: $update_stmt = $con->prepare("UPDATE user SET is_verified = 1, otp_code = NULL, otp_expiry = NULL WHERE email = ?");
+verify.php:49: $update_stmt->bind_param("s", $email);
+verify.php:50: if ($update_stmt->execute()) {

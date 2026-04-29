@@ -5,7 +5,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 include 'connection.php';
 
-$conn = new mysqli($host, $user, $password, $dbname, $port);
+$conn = new mysqli($db_server, $db_user, $db_pass, $db_name, $port);
 if ($conn->connect_error) {
     die("Database Connection failed: " . $conn->connect_error);
 }
@@ -37,9 +37,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES['pdf_file'])) {
     exit();
 }
 
-// ==========================================
-// STEP 2: Preview Data
-// ==========================================
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $clubName      = htmlspecialchars($_POST['clubName']      ?? 'No Club Found');
     $presidentName = htmlspecialchars($_POST['presidentName'] ?? 'President');
@@ -85,20 +82,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             border: 1px solid rgba(255,255,255,0.15);
         }
 
-        /* =============================================
-           A4 PAPER - EXACT DIMENSIONS, OVERFLOW HIDDEN
-           This is what gets screenshotted = exactly 1 page
-        ============================================= */
         #pdf-area {
-            width:  794px;   /* 210mm at 96dpi */
-            height: 1123px;  /* 297mm at 96dpi */
+            width:  794px;  
+            height: 1123px;  
             padding: 60px 90px 60px 90px;
             background: white;
             box-shadow: 0 0 40px rgba(0,0,0,0.6);
             font-size: 15px;
             line-height: 1.55;
             color: #000;
-            overflow: hidden;          /* CRITICAL: nothing leaks out */
+            overflow: hidden;        
             position: relative;
             outline: none;
         }
@@ -131,9 +124,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         .signature-block { margin-top: 36px; }
 
-        /* =============================================
-           SEND BUTTON
-        ============================================= */
+      
         #submitBtn {
             margin-top: 28px;
             padding: 14px 44px;
@@ -160,9 +151,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <input type="hidden" id="data_club_name" value="<?php echo $clubName; ?>">
 <input type="hidden" id="data_subject"   value="<?php echo $subject; ?>">
 
-<!-- ================================================
-     THIS EXACT DIV IS SCREENSHOTTED = ALWAYS 1 PAGE
-================================================ -->
+
 <div id="pdf-area" contenteditable="true">
 
     <div class="letter-header">
@@ -230,7 +219,7 @@ async function uploadPDF() {
     const btn    = document.getElementById('submitBtn');
     const pdfDiv = document.getElementById('pdf-area');
 
-    // Bracket check
+    
     if (pdfDiv.innerText.includes('[') || pdfDiv.innerText.includes(']')) {
         if (!confirm("You still have unfilled brackets []. Send anyway?")) return;
     }
@@ -239,12 +228,9 @@ async function uploadPDF() {
     btn.innerText  = "Generating PDF...";
 
     try {
-        // ================================================
-        // STEP 1: Screenshot the EXACT div (794x1123px)
-        //         html2canvas captures exactly what you see
-        // ================================================
+     
         const canvas = await html2canvas(pdfDiv, {
-            scale:          3,          // high resolution
+            scale:          3,          
             useCORS:        true,
             logging:        false,
             backgroundColor:'#ffffff',
@@ -258,23 +244,17 @@ async function uploadPDF() {
 
         const imgData = canvas.toDataURL('image/jpeg', 0.98);
 
-        // ================================================
-        // STEP 2: Insert the screenshot as a SINGLE PAGE
-        //         into a jsPDF A4 document
-        // ================================================
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF({
             orientation: 'portrait',
             unit:        'mm',
-            format:      'a4'           // 210 x 297 mm
+            format:      'a4'           
         });
 
-        // Fill entire A4 page with the screenshot image
+     
         pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
 
-        // ================================================
-        // STEP 3: Export as Blob and upload to server
-        // ================================================
+    
         const pdfBlob = pdf.output('blob');
 
         const formData = new FormData();

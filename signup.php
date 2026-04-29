@@ -1,6 +1,7 @@
 <?php 
 session_start();
 include 'connection.php';
+include 'mailer.php';
 
 class User {
     private $con;
@@ -10,46 +11,64 @@ class User {
     }
 
     public function createAccount($ID, $name, $email, $password, $phone, $dob) {
-        // Sanitize inputs
         $student_id = mysqli_real_escape_string($this->con, $ID);
         $name       = mysqli_real_escape_string($this->con, $name);
         $email      = mysqli_real_escape_string($this->con, $email);
         $phone      = mysqli_real_escape_string($this->con, $phone);
         $dob        = mysqli_real_escape_string($this->con, $dob);
 
-        // --- PASSWORD HASHING ---
-        // We hash the password BEFORE putting it into the SQL string
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-        $hashed_password = mysqli_real_escape_string($this->con, $hashed_password);
 
-        // 1. Check if Email already exists
+        // Check if Email or ID already exists
         $verify_query = mysqli_query($this->con, "SELECT email FROM user WHERE email='$email'");
         $verify_query2 = mysqli_query($this->con, "SELECT student_id FROM students WHERE student_id='$student_id'");
         
-        if(mysqli_num_rows($verify_query) != 0||mysqli_num_rows($verify_query2) != 0) {
+        if(mysqli_num_rows($verify_query) != 0 || mysqli_num_rows($verify_query2) != 0) {
             $_SESSION['msg'] = "This Email or ID is already registered.";
             $_SESSION['msg_type'] = "error"; 
             header("Location: homepage.php");
             exit();
-        } else {
-            // 2. Insert into 'user' table (Using the $hashed_password)
-            $sql_user = "INSERT INTO `user` (email, Name, password) VALUES ('$email', '$name', '$hashed_password')";
-            
-            // 3. Insert into 'students' table
+        }
+
+        // START TRANSACTION - Since student_email depends on user.email
+        mysqli_begin_transaction($this->con);
+
+        try {
+            // Generate OTP
+            $otp = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
+            $otp_expiry = date('Y-m-d H:i:s', strtotime('+5 minutes'));
+
+            // 1. Insert into 'user' first (Portal will use its DB default value)
+            $sql_user = "INSERT INTO `user` (email, Name, password, otp_code, otp_expiry, is_verified) VALUES ('$email', '$name', '$hashed_password', '$otp', '$otp_expiry', 0)";
+            if (!mysqli_query($this->con, $sql_user)) {
+                throw new Exception("User table error: " . mysqli_error($this->con));
+            }
+
+            // 2. Insert into 'students' (Foreign Key student_email checks for $email above)
             $sql_student = "INSERT INTO `students` (student_id, full_name, student_email, DOB, contact) 
                             VALUES ('$student_id', '$name', '$email', '$dob', '$phone')";
-
-            if(mysqli_query($this->con, $sql_user) && mysqli_query($this->con, $sql_student)) {
-                $_SESSION['msg'] = "Account created successfully! You can now login.";
-                $_SESSION['msg_type'] = "success"; 
-                header("Location: homepage.php");
-                exit();
-            } else {
-                $_SESSION['msg'] = "Database Error: " . mysqli_error($this->con);
-                $_SESSION['msg_type'] = "error";
-                header("Location: homepage.php");
-                exit();
+            if (!mysqli_query($this->con, $sql_student)) {
+                throw new Exception("Student table error: " . mysqli_error($this->con));
             }
+
+            // If both queries are successful, commit to database
+            mysqli_commit($this->con);
+
+            // Send Verification Email
+            sendVerificationEmail($email, $otp);
+
+            $_SESSION['msg'] = "Account created! Please check your email for the OTP.";
+            $_SESSION['msg_type'] = "success"; 
+            header("Location: verify.php?email=" . urlencode($email));
+            exit();
+
+        } catch (Exception $e) {
+            // If either query fails, rollback to prevent orphan records
+            mysqli_rollback($this->con);
+            $_SESSION['msg'] = "Registration failed: " . $e->getMessage();
+            $_SESSION['msg_type'] = "error";
+            header("Location: homepage.php");
+            exit();
         }
     }
 }
@@ -65,5 +84,4 @@ if (isset($_POST['submit'])) {
         $_POST['DOB']
     );
 }
-?>
 ?>

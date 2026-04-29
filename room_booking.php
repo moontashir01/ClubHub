@@ -90,7 +90,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['book_room'])) {
     </style>
 </head>
 <body>
- <a href="Club_dashboard.php" class="back-btn">← Back to Dashboard</a>
+ <a href="room.php" class="back-btn">← Back</a>
  
 <div class="main-container">
     <div class="gallery-side">
@@ -118,7 +118,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['book_room'])) {
                     $rooms = mysqli_query($con, "SELECT * FROM rooms");
                     if($rooms) {
                         while($row = mysqli_fetch_assoc($rooms)) {
-                            // ক্যাপাসিটি ডাটাবেস থেকে নিবে, না থাকলে N/A দেখাবে
                             $capacity = isset($row['capacity']) && !empty($row['capacity']) ? $row['capacity'] : 'N/A';
                             
                             $room_display = isset($row['room_name']) ? $row['room_name'] : (isset($row['room_number']) ? $row['room_number'] : 'Unknown Room');
@@ -164,8 +163,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['book_room'])) {
 
             <button type="submit" name="book_room" class="btn">Submit Request</button>
         </form>
-
-        <a href="User_dashboard.php" class="back-link">Need to go back? <span>Dashboard</span></a>
     </div>
 </div>
 

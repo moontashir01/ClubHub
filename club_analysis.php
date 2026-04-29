@@ -6,13 +6,13 @@ if (session_status() === PHP_SESSION_NONE) {
 include 'connection.php';
 
 mysqli_report(MYSQLI_REPORT_OFF);
-$conn = new mysqli($host, $user, $password, $dbname, $port);
+$conn = new mysqli($db_server, $db_user, $db_pass, $db_name, $port);
 
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// একটি ছোট ফাংশন বানিয়ে দিলাম যাতে fetch_assoc() on bool এরর না আসে
+
 function getCountSafe($conn, $query) {
     $res = $conn->query($query);
     if ($res && $res->num_rows > 0) {

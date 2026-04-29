@@ -2,12 +2,7 @@
 session_start();
 include 'connection.php';
 
-if(!isset($_SESSION['Email'])){
-    header("Location:homepage.php");
-}
 
-$email=$_SESSION['Email'];
-$name = $_SESSION['Name'];
 ?>
 
 
@@ -22,7 +17,7 @@ $name = $_SESSION['Name'];
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>UniLink | Pro Portal</title>
+    <title>ClubHub | User Portal</title>
 
     <style>
 
@@ -36,7 +31,7 @@ $name = $_SESSION['Name'];
 
 
 
-        /* --- NAVBAR --- */
+        
 
         nav { display: flex; justify-content: space-between; padding: 20px 5%; background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent); position: fixed; width: 90%; z-index: 1000; align-items: center; }
 
@@ -100,7 +95,7 @@ $name = $_SESSION['Name'];
 
         .dynamic-btn {
 
-    transition: all 0.3s ease; /* Smooth transition */
+    transition: all 0.3s ease; 
 
 }
 
@@ -108,17 +103,17 @@ $name = $_SESSION['Name'];
 
 .dynamic-btn:hover {
 
-    filter: brightness(1.2); /* Makes the color glow/lighten */
+    filter: brightness(1.2); 
 
-    transform: scale(1.05);  /* Slightly grows the button */
+    transform: scale(1.05);  
 
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3); /* Adds a soft shadow */
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3); 
 
 }
 
 
 
-        /* --- SCROLL HINT --- */
+        
 
         .scroll-hint { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; flex-direction: column; align-items: center; opacity: 0.5; color: white; text-decoration: none; font-size: 10px; }
 
@@ -140,7 +135,7 @@ $name = $_SESSION['Name'];
 
         <div class="logo">Club Hub</div>
 
-        <div>Community | News | <span style="background:var(--pink); padding:6px 15px; border-radius:4px; font-weight:bold; cursor:pointer;">Login</span></div>
+        <div>Community | News | <a href="logout.php" style="background:var(--pink); padding:6px 15px; border-radius:4px; font-weight:bold; cursor:pointer;">Log Out</a></div>
 
     </nav>
 
@@ -170,33 +165,153 @@ $name = $_SESSION['Name'];
 
             <button class="club-card" onclick="location.href='#link1'">
 
-                <img src="images/debate-1.png">
+                <img src="images/debate.png">
 
                 <div class="label">Debate Society</div>
 
             </button>
 
-            <button class="club-card" onclick="location.href='#link2'">
+            <button class="club-card" onclick="location.href='#link-apletics'">
 
-                <img src="images/athlete-sport-design-illustration-art-vector.jpg">
+                <img src="images/nsuac-logo.png">
 
-                <div class="label">Art Club</div>
-
-            </button>
-
-            <button class="club-card" onclick="location.href='#link3'">
-
-                <img src="images/blood-donation-5427229_1920.jpg">
-
-                <div class="label">Robotics</div>
+                <div class="label">Athletics Club (NSUAC)</div>
 
             </button>
 
-            <button class="club-card" onclick="location.href='#link4'">
+            <button class="club-card" onclick="location.href='#link-cdc'">
 
-                <img src="images/coding.jpg">
+                <img src="images/CDC logo.png">
 
-                <div class="label">Coding Hub</div>
+                <div class="label">Cine and Drama Club (NSUCDC)</div>
+
+            </button>
+
+            <button class="club-card" onclick="location.href='#link-cc'">
+
+                <img src="images/nsucc-logo.png">
+
+                <div class="label">Communications Club (NSUCC)</div>
+
+            </button>
+
+            <button class="club-card" onclick="location.href='#link-cec'">
+
+                <img src="images/nsucec-logo.png">
+
+                <div class="label">Computer &amp; Engineering Club (NSUCEC)</div>
+
+            </button>
+
+            <button class="club-card" onclick="location.href='#link-earth'">
+
+                <img src="images/nsuec-logo.png">
+
+                <div class="label">Earth Club</div>
+
+            </button>
+
+            <button class="club-card" onclick="location.href='#link-edc'">
+
+                <img src="images/clib logo.jpg">
+
+                <div class="label">Ethics &amp; Diversity Club (NSUEDC)</div>
+
+            </button>
+
+            <button class="club-card" onclick="location.href='#link-fc'">
+
+                <img src="images/nsufc-logo.png">
+
+                <div class="label">Finance Club (NSUFC)</div>
+
+            </button>
+
+            <button class="club-card" onclick="location.href='#link-hrc'">
+
+                <img src="images/nsuhrc-logo.png">
+
+                <div class="label">Human Resources Club (NSUHRC)</div>
+
+            </button>
+
+            <button class="club-card" onclick="location.href='#link-lms'">
+
+                <img src="images/LMS Logo.png">
+
+                <div class="label">Law and Mooting Society (NSULMS)</div>
+
+            </button>
+
+            <button class="club-card" onclick="location.href='#link-mibc'">
+
+                <img src="images/275026736_1173615596746815_4328010199598950320_n.png">
+
+                <div class="label">Marketing &amp; International Business Club (NSUMIBC)</div>
+
+            </button>
+
+            <button class="club-card" onclick="location.href='#link-mba'">
+
+                <img src="images/nsumba-logo.png">
+
+                <div class="label">MBA Club</div>
+
+            </button>
+
+            <button class="club-card" onclick="location.href='#link-mun'">
+
+                <img src="images/nsu mun.jpg">
+
+                <div class="label">Model UN Club (NSUMUN)</div>
+
+            </button>
+
+            <button class="club-card" onclick="location.href='#link-pharma'">
+
+                <img src="images/pharmacy.jpg">
+
+                <div class="label">Pharmaceutical Club</div>
+
+            </button>
+
+            <button class="club-card" onclick="location.href='#link-phs'">
+
+                <img src="images/nsuphsc-logo.png">
+
+                <div class="label">Public Health and Sciences Club</div>
+
+            </button>
+
+            <button class="club-card" onclick="location.href='#link-nsuss'">
+
+                <img src="images/nsuss-logo.png">
+
+                <div class="label">Sangskritik Sangathan (NSUSS)</div>
+
+            </button>
+
+            <button class="club-card" onclick="location.href='#link-nsussc'">
+
+                <img src="images/nsussc-logo.jpg">
+
+                <div class="label">Social Services Club (NSUSSC)</div>
+
+            </button>
+
+            <button class="club-card" onclick="location.href='#link-yef'">
+
+                <img src="images/yef-logo.png">
+
+                <div class="label">Young Economists Forum (YEF)</div>
+
+            </button>
+
+            <button class="club-card" onclick="location.href='#link-yes'">
+
+                <img src="images/yes-logo.png">
+
+                <div class="label">Young Entrepreneur Society (YES)</div>
 
             </button>
 
@@ -209,51 +324,6 @@ $name = $_SESSION['Name'];
     <script>
 
         const contentData = [
-
-            {
-
-                club: 'Robotics',
-
-                title: 'Robotics: Culling Game',
-
-                img: 'images/blood-donation-5427229_1920.jpg',
-
-                desc: 'A deadly jujutsu battle orchestrated by the high-tech Robotics society.',
-
-                regLink: 'register_robotics.php',
-
-                regText: 'Register Now',
-
-                regColor: '#ff4d8d', // Pink
-
-                eventLink: 'robotics_details.html',
-
-                viewText: 'View Event'
-
-            },
-
-            {
-
-                club: 'Art Club',
-
-                title: 'Cyberpunk Art Expo',
-
-                img: 'images/athlete-sport-design-illustration-art-vector.jpg',
-
-                desc: 'A new wave of digital artists rise through the ranks in the underground.',
-
-                regLink: 'register_art.php',
-
-                regText: 'Join Expo',
-
-                regColor: '#00d2ff', // Cyan
-
-                eventLink: 'art_expo.html',
-
-                viewText: 'Gallery'
-
-            },
-
             {
 
                 club: 'Gaming',

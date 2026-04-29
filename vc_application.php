@@ -33,7 +33,6 @@ if(isset($_SESSION['Email'])) {
     <title> Application | Professional Portal</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Base Styles with Professional Background */
         body { 
             margin: 0; 
             font-family: 'Poppins', sans-serif; 
@@ -56,7 +55,7 @@ if(isset($_SESSION['Email'])) {
             gap: 20px;
         }
 
-        /* --- Custom Tooltip Button --- */
+       
         .tooltip-container {
             --background-light: #ff5555;
             --background-dark: #000000;
@@ -120,7 +119,7 @@ if(isset($_SESSION['Email'])) {
             pointer-events: auto;
         }
 
-        /* Premium Glassmorphism Form Container */
+        
         .form-container { 
             background: rgba(30, 41, 59, 0.85); 
             backdrop-filter: blur(12px); 
@@ -244,9 +243,9 @@ if(isset($_SESSION['Email'])) {
 <body>
 
     <div class="main-wrapper">
-        <a href="Club_dashboard.php" class="tooltip-container">
+        <a href="application.php" class="tooltip-container">
             <span class="tooltip">Go Back</span>
-            <span>&#8592; Back to Dashboard</span>
+            <span>&#8592; Back </span>
         </a>
 
         <div class="form-container">
