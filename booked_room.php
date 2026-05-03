@@ -12,12 +12,24 @@ if ($conn->connect_error) {
     die("Database Connection failed: " . $conn->connect_error);
 }
 
+// ---------------------------------------------------------
+// DYNAMIC DASHBOARD ROUTING (Fix for the back button issue)
+// ---------------------------------------------------------
+$dashboard_url = "admin_dashboard.php"; // Default fallback
+if (isset($_SESSION['role'])) {
+    if ($_SESSION['role'] === 'Admin' || $_SESSION['role'] === 'admin') {
+        $dashboard_url = "admin_dashboard.php";
+    } elseif ($_SESSION['role'] === 'Club' || $_SESSION['role'] === 'club') {
+        $dashboard_url = "club_dashboard.php"; // Change this if your club dashboard name is different
+    }
+}
+// ---------------------------------------------------------
+
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && isset($_POST['booking_id'])) {
     $booking_id = $_POST['booking_id'];
     $action = $_POST['action'];
 
-    // এখানে booking_id ধরে আপডেট করা হচ্ছে, যাতে স্পেসিফিক বুকিংটাই আপডেট হয়
     if ($action === 'approve') {
         $update_sql = "UPDATE room_bookings SET status='Approved' WHERE booking_id=?"; 
     } elseif ($action === 'reject') {
@@ -114,7 +126,7 @@ $availability_result = $conn->query($availability_sql);
 
 <div class="container">
     <div class="top-bar">
-        <a href="admin_dashboard.php" class="back-btn">&#8592; Back to Dashboard</a>
+        <a href="<?php echo $dashboard_url; ?>" onclick="history.back(); return false;" class="back-btn">&#8592; Back to Dashboard</a>
         <h2>Room Booking Management</h2>
     </div>
 
@@ -152,7 +164,6 @@ $availability_result = $conn->query($availability_sql);
                             $status = $row['status'] ?? 'Pending';
                             $badgeClass = strtolower($status);
                             
-                            // এখানেও booking_id ঠিক করা হয়েছে
                             $bookingID = $row['booking_id'] ?? 0; 
                             
                             $clubName = htmlspecialchars($row['club_name'] ?? $row['club'] ?? 'N/A');

@@ -2,11 +2,9 @@
 session_start();
 include 'connection.php';
 
-// Include PDF Libraries
 require_once('fpdf/fpdf.php');
 require_once('fpdi/src/autoload.php');
 
-// Check if admin is logged in
 if (!isset($_SESSION['AdminRole'])) {
     header("Location: login.php");
     exit();
@@ -15,17 +13,16 @@ if (!isset($_SESSION['AdminRole'])) {
 $email = $_SESSION['AdminEmail'] ?? '';
 $adminRole = $_SESSION['AdminRole'];
 
-// ==========================================
-// Approve/Reject Logic (with rejection note + PDF stamp)
-// ==========================================
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['app_id'])) {
     $app_id = intval($_POST['app_id']);
     $action = mysqli_real_escape_string($con, $_POST['action']);
-    $rejection_note = isset($_POST['rejection_note']) ? mysqli_real_escape_string($con, $_POST['rejection_note']) : '';
+    $security_message = isset($_POST['rejection_note']) ? mysqli_real_escape_string($con, $_POST['rejection_note']) : '';
 
-    $file_query = @mysqli_query($con, "SELECT letter_content FROM vc_applications WHERE id=$app_id");
+    $file_query = @mysqli_query($con, "SELECT club_name, subject, letter_content FROM vc_applications WHERE id=$app_id");
     $file_row = mysqli_fetch_assoc($file_query);
     $original_file = $file_row['letter_content'];
+    $club_name = $file_row['club_name'];
+    $subject = $file_row['subject'];
     $stamped_path = $original_file; 
 
     if (!empty($original_file) && file_exists($original_file)) {
@@ -42,19 +39,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['app_id'])) {
                 if ($pageNo == 1) {
                     $pdf->SetFont('Arial', 'B', 24);
                     if ($action === 'Approved') {
-                        $pdf->SetTextColor(16, 185, 129); // Green
+                        $pdf->SetTextColor(16, 185, 129);
                         $pdf->SetXY(20, 20); 
                         $pdf->Cell(0, 10, 'APPROVED', 0, 1, 'R');
                     } else if ($action === 'Rejected') {
-                        $pdf->SetTextColor(239, 68, 68); // Red
+                        $pdf->SetTextColor(239, 68, 68);
                         $pdf->SetXY(20, 20);
                         $pdf->Cell(0, 10, 'REJECTED', 0, 1, 'R');
                         
-                        if ($rejection_note !== '') {
+                        if ($security_message !== '') {
                             $pdf->SetFont('Arial', 'I', 12);
                             $pdf->SetXY(20, 32);
                             $pdf->SetLeftMargin(100); 
-                            $pdf->MultiCell(0, 6, "Note: " . $rejection_note, 0, 'R');
+                            $pdf->MultiCell(0, 6, "Note: " . $security_message, 0, 'R');
                             $pdf->SetLeftMargin(10); 
                         }
                     }
@@ -71,19 +68,29 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['app_id'])) {
     }
 
     $update_query = "UPDATE vc_applications SET status='$action', letter_content='$stamped_path'";
-    if ($action === 'Rejected' && $rejection_note !== '') {
-        $update_query .= ", rejection_note = '$rejection_note'";
+    if ($action === 'Rejected' && $security_message !== '') {
+        $update_query .= ", rejection_note = '$security_message'";
     }
     $update_query .= " WHERE id=$app_id";
 
     if (mysqli_query($con, $update_query)) {
+        
+        $safe_club_name = mysqli_real_escape_string($con, $club_name);
+        
+        $event_update_query = "UPDATE events SET admin_clearance='$action'";
+        if ($action === 'Rejected' && $security_message !== '') {
+            $event_update_query .= ", security_message ='$security_message'";
+        }
+        $event_update_query .= " WHERE event_creator='$safe_club_name' AND admin_clearance='Pending' ORDER BY event_id DESC LIMIT 1";
+        
+        mysqli_query($con, $event_update_query);
+
         echo "<script>alert('Application successfully $action!'); window.location.href='" . $_SERVER['PHP_SELF'] . "';</script>";
     } else {
         echo "<script>alert('Error updating status!');</script>";
     }
 }
 
-// Permission mapping
 $approvalPermissions = [
     'Room Booking Permission' => ['Registrar', 'Student Affairs', 'System Admin'],
     'Budget Approval' => ['Student Affairs', 'System Admin'],

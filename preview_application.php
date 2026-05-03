@@ -10,10 +10,18 @@ if ($conn->connect_error) {
     die("Database Connection failed: " . $conn->connect_error);
 }
 
-
+// 1. PDF এবং ডাটাবেসে সেভ করার অংশ (AJAX Request)
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES['pdf_file'])) {
     $club_name = $conn->real_escape_string($_POST['club_name']);
     $subject   = $conn->real_escape_string($_POST['subject']);
+    
+    // ইভেন্টের ডাটাগুলো রিসিভ করা
+    $appType           = $conn->real_escape_string($_POST['appType'] ?? 'Activity');
+    $eventName         = $conn->real_escape_string($_POST['eventName'] ?? '');
+    $eventDate         = $conn->real_escape_string($_POST['eventDate'] ?? '');
+    $eventDuration     = $conn->real_escape_string($_POST['eventDuration'] ?? '');
+    $eventAvailability = $conn->real_escape_string($_POST['eventAvailability'] ?? '');
+    $club_id           = (int)($_POST['club_id'] ?? 0);
 
     $upload_dir = 'uploads/vc_applications/';
     if (!is_dir($upload_dir)) {
@@ -24,9 +32,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES['pdf_file'])) {
     $target_file = $upload_dir . $filename;
 
     if (move_uploaded_file($_FILES['pdf_file']['tmp_name'], $target_file)) {
+        
         $sql = "INSERT INTO vc_applications (club_name, subject, letter_content, status)
                 VALUES ('$club_name', '$subject', '$target_file', 'Pending')";
+        
         if ($conn->query($sql) === TRUE) {
+            
+            if($appType === 'Event') {
+                $db_club_id = ($club_id > 0) ? "'$club_id'" : "NULL";
+
+                $sql_event = "INSERT INTO events (club_id, event_name, event_date, event_duration, event_creator, event_availablity, security_clearance, admin_clearance)
+                              VALUES ($db_club_id, '$eventName', '$eventDate', '$eventDuration', '$club_name', '$eventAvailability', 'Pending', 'Pending')";
+                $conn->query($sql_event);
+            }
+
             echo "SUCCESS";
         } else {
             echo "Database Error: " . $conn->error;
@@ -43,8 +62,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $subject       = htmlspecialchars($_POST['subject']       ?? 'Application');
     $appBody       = htmlspecialchars($_POST['appBody']       ?? '');
     $todayDate     = date("F j, Y");
+    
+
+    $appType           = htmlspecialchars($_POST['appType'] ?? 'Activity');
+    $eventName         = htmlspecialchars($_POST['eventName'] ?? '');
+    $eventDate         = htmlspecialchars($_POST['eventDate'] ?? '');
+    $eventDuration     = htmlspecialchars($_POST['eventDuration'] ?? '');
+    $eventAvailability = htmlspecialchars($_POST['eventAvailability'] ?? '');
+    $club_id           = htmlspecialchars($_POST['club_id'] ?? '');
 } else {
-    header("Location: vc_application.php");
+    header("Location: application.php"); // Redirect back to previous form if accessed directly
     exit();
 }
 ?>
@@ -55,7 +82,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Official Preview - ClubHub</title>
 
-    <!-- Use html2canvas + jsPDF directly (NO html2pdf wrapper) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
@@ -150,6 +176,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 <input type="hidden" id="data_club_name" value="<?php echo $clubName; ?>">
 <input type="hidden" id="data_subject"   value="<?php echo $subject; ?>">
+<input type="hidden" id="data_appType" value="<?php echo $appType; ?>">
+<input type="hidden" id="data_eventName" value="<?php echo $eventName; ?>">
+<input type="hidden" id="data_eventDate" value="<?php echo $eventDate; ?>">
+<input type="hidden" id="data_eventDuration" value="<?php echo $eventDuration; ?>">
+<input type="hidden" id="data_eventAvailability" value="<?php echo $eventAvailability; ?>">
+<input type="hidden" id="data_club_id" value="<?php echo $club_id; ?>">
 
 
 <div id="pdf-area" contenteditable="true">
@@ -219,7 +251,6 @@ async function uploadPDF() {
     const btn    = document.getElementById('submitBtn');
     const pdfDiv = document.getElementById('pdf-area');
 
-    
     if (pdfDiv.innerText.includes('[') || pdfDiv.innerText.includes(']')) {
         if (!confirm("You still have unfilled brackets []. Send anyway?")) return;
     }
@@ -228,7 +259,6 @@ async function uploadPDF() {
     btn.innerText  = "Generating PDF...";
 
     try {
-     
         const canvas = await html2canvas(pdfDiv, {
             scale:          3,          
             useCORS:        true,
@@ -239,7 +269,7 @@ async function uploadPDF() {
             windowWidth:    pdfDiv.offsetWidth,
             windowHeight:   pdfDiv.offsetHeight,
             scrollX:        0,
-            scrollY:        -window.scrollY   // handle page scroll offset
+            scrollY:        -window.scrollY
         });
 
         const imgData = canvas.toDataURL('image/jpeg', 0.98);
@@ -251,16 +281,22 @@ async function uploadPDF() {
             format:      'a4'           
         });
 
-     
         pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
 
-    
         const pdfBlob = pdf.output('blob');
 
         const formData = new FormData();
         formData.append('pdf_file',  pdfBlob, 'Application.pdf');
         formData.append('club_name', document.getElementById('data_club_name').value);
         formData.append('subject',   document.getElementById('data_subject').value);
+        
+        // Append all the newly captured Event Data
+        formData.append('appType', document.getElementById('data_appType').value);
+        formData.append('eventName', document.getElementById('data_eventName').value);
+        formData.append('eventDate', document.getElementById('data_eventDate').value);
+        formData.append('eventDuration', document.getElementById('data_eventDuration').value);
+        formData.append('eventAvailability', document.getElementById('data_eventAvailability').value);
+        formData.append('club_id', document.getElementById('data_club_id').value);
 
         const response = await fetch('preview_application.php', {
             method: 'POST',

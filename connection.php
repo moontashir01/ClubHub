@@ -3,7 +3,7 @@
     $db_user = 'root';
     $port = '3308';
     $db_pass = '';
-    $db_name = 'clam';
+    $db_name = 'joyclab';
     
     try {
         

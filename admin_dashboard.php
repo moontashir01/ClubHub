@@ -65,7 +65,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             redirect_with_admin_msg('Admin event created successfully.');
         }
 
-        // Fallback for databases that still enforce event_creator -> clubs.club_name foreign key
         $fallback_stmt = $con->prepare("
             INSERT INTO events (
                 club_id, event_name, event_date, event_creator, event_availablity, security_clearance, admin_clearance
@@ -186,7 +185,7 @@ if ($resultVolunteers) {
         .submit-btn { width: 100%; background: var(--primary); border: none; padding: 15px; border-radius: 10px; color: white; font-weight: bold; font-size: 1rem; cursor: pointer; transition: 0.3s; margin-top: 10px; }
         .submit-btn:hover { background: #e63e70; box-shadow: 0 5px 15px var(--primary-glow); transform: translateY(-2px); }
 
-        /* === NOTIFICATION BELL === */
+        
         .notif-wrapper { position: relative; }
         .notif-bell {
             background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
@@ -260,10 +259,8 @@ if ($resultVolunteers) {
 
         <div class="nav-label">Main Menu</div>
         <div style="color: var(--primary); font-weight: bold; margin-bottom: 15px; padding: 10px; background: rgba(255, 71, 126, 0.1); border-radius: 8px;">Dashboard</div>
-        <div style="color: var(--muted); margin-bottom: 15px; padding: 10px; cursor: pointer;">System Logs</div>
-        <div style="color: var(--muted); margin-bottom: 15px; padding: 10px; cursor: pointer;">Settings</div>
 
-        <a href="logout.php" class="logout-btn">Secure Logout</a>
+        <a href="logout.php" class="logout-btn"> Logout</a>
     </aside>
 
     <main class="main-content">
@@ -400,11 +397,11 @@ if ($resultVolunteers) {
                 link: 'pdf_applications_desk.php'
             },
             {
-                title: 'Room Approvals',
+                title: 'Approvals',
                 icon: '🏢',
-                desc: 'Review, approve, or reject club room requests across campus.',
+                desc: 'Review, approve, or reject club room and space requests across campus.',
                 allowedRoles: ['Registrar', 'Admin'],
-                link: 'booked_room.php'
+                link: 'Approved.php'
             },
             {
                 title: 'Club Analysis',
@@ -412,6 +409,13 @@ if ($resultVolunteers) {
                 desc: 'View comprehensive analytics and performance metrics for all clubs.',
                 allowedRoles: ['Student Affairs', 'Registrar', 'Admin'],
                 link: 'club_analysis.php'
+            },
+            {
+                title: 'Club Info',
+                icon: 'ℹ️',
+                desc: 'View informations for all clubs.',
+                allowedRoles: ['Student Affairs', 'Registrar', 'Admin'],
+                link: 'club_info.php'
             }
         ];
 

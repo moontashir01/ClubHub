@@ -4,13 +4,13 @@ include 'connection.php';
 
 $club_name = "No Club Found";
 $president_name = "";
-
+$club_id = "";
 
 if(isset($_SESSION['Email'])) {
     $email = $_SESSION['Email'];
     
     $query = mysqli_query($con,"
-        SELECT clubs.club_name, students.full_name
+        SELECT clubs.club_id, clubs.club_name, students.full_name
         FROM `user`
         INNER JOIN `students` ON `user`.email = students.student_email
         INNER JOIN `club_members` ON club_members.student_id = students.student_id
@@ -20,6 +20,7 @@ if(isset($_SESSION['Email'])) {
 
     if($query && mysqli_num_rows($query) > 0) {
         $row = mysqli_fetch_assoc($query);
+        $club_id = $row['club_id'];
         $club_name = $row['club_name'];
         $president_name = $row['full_name'];
     }
@@ -55,7 +56,6 @@ if(isset($_SESSION['Email'])) {
             gap: 20px;
         }
 
-       
         .tooltip-container {
             --background-light: #ff5555;
             --background-dark: #000000;
@@ -78,48 +78,6 @@ if(isset($_SESSION['Email'])) {
             font-weight: 600;
         }
 
-        .tooltip-container .tooltip {
-            position: absolute;
-            top: -100%;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 0.6em 1em;
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
-            transition: all 0.3s;
-            border-radius: var(--bubble-size);
-            background: var(--background-light);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            font-size: 13px;
-            white-space: nowrap;
-        }
-
-        .tooltip-container .tooltip::before {
-            content: "";
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            transform: translate(-50%);
-            border-style: solid;
-            border-width: 8px 8px 0;
-            border-color: var(--background-light) transparent transparent;
-        }
-
-        .tooltip-container:hover {
-            background: var(--background-dark);
-            color: var(--text-color-dark);
-            box-shadow: 0 0 20px var(--glow-color);
-        }
-
-        .tooltip-container:hover .tooltip {
-            top: -120%;
-            opacity: 1;
-            visibility: visible;
-            pointer-events: auto;
-        }
-
-        
         .form-container { 
             background: rgba(30, 41, 59, 0.85); 
             backdrop-filter: blur(12px); 
@@ -147,6 +105,40 @@ if(isset($_SESSION['Email'])) {
             margin: 0;
             color: #94a3b8;
             font-size: 0.95rem;
+        }
+
+        /* Professional Segmented Control for App Type */
+        .app-type-selector {
+            display: flex;
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            padding: 6px;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .app-type-selector label {
+            flex: 1;
+            text-align: center;
+            padding: 12px 15px;
+            color: #94a3b8;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-size: 0.95rem;
+            z-index: 1;
+        }
+
+        .app-type-selector input[type="radio"] {
+            display: none;
+        }
+
+        .app-type-selector input[type="radio"]:checked + label {
+            background: #ff477e;
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(255, 71, 126, 0.4);
         }
         
         .input-group { 
@@ -193,13 +185,14 @@ if(isset($_SESSION['Email'])) {
             transition: 0.2s ease; 
         }
         
+        /* OVERLAP FIX: Using :not(:placeholder-shown) for bulletproof floating labels */
         .input-group input:focus ~ label, 
-        .input-group input:valid ~ label, 
+        .input-group input:not(:placeholder-shown) ~ label, 
         .input-group textarea:focus ~ label, 
-        .input-group textarea:valid ~ label,
+        .input-group textarea:not(:placeholder-shown) ~ label,
         .input-group select:focus ~ label,
         .input-group select:valid ~ label,
-        .input-group input[readonly] ~ label { 
+        .input-group input[type="datetime-local"] ~ label { 
             top: -10px; 
             left: 10px; 
             font-size: 0.8rem; 
@@ -214,6 +207,16 @@ if(isset($_SESSION['Email'])) {
             display: grid; 
             grid-template-columns: 1fr 1fr; 
             gap: 20px; 
+        }
+
+        #eventExtraFields {
+            display: none; /* Hidden by default */
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         @media (max-width: 600px) {
@@ -231,12 +234,15 @@ if(isset($_SESSION['Email'])) {
             font-size: 1.1rem; 
             font-weight: 600; 
             cursor: pointer; 
-            transition: background 0.2s; 
+            transition: background 0.2s, transform 0.1s; 
             margin-top: 10px;
         }
         
         .submit-btn:hover { 
             background: #e11d48; 
+        }
+        .submit-btn:active {
+            transform: scale(0.98);
         }
     </style>
 </head>
@@ -244,7 +250,6 @@ if(isset($_SESSION['Email'])) {
 
     <div class="main-wrapper">
         <a href="application.php" class="tooltip-container">
-            <span class="tooltip">Go Back</span>
             <span>&#8592; Back </span>
         </a>
 
@@ -256,25 +261,51 @@ if(isset($_SESSION['Email'])) {
 
             <form action="preview_application.php" method="POST">
                 
+                <div class="app-type-selector">
+                    <input type="radio" id="typeActivity" name="appType" value="Activity" checked onchange="toggleFields()">
+                    <label for="typeActivity">General Event</label>
+                    
+                    <input type="radio" id="typeEvent" name="appType" value="Event" onchange="toggleFields()">
+                    <label for="typeEvent">Major Event</label>
+                </div>
+
+                <input type="hidden" name="club_id" value="<?php echo htmlspecialchars($club_id); ?>">
+                <input type="hidden" name="club_name_hidden" value="<?php echo htmlspecialchars($club_name); ?>">
+
                 <div class="row">
                     <div class="input-group">
-                        <input type="text" id="clubName" name="clubName" value="<?php echo htmlspecialchars($club_name); ?>" readonly required>
+                        <input type="text" id="clubName" name="clubName" value="<?php echo htmlspecialchars($club_name); ?>" readonly placeholder=" ">
                         <label>Organization Name</label>
                     </div>
                     <div class="input-group">
-                        <input type="text" name="presidentName" value="<?php echo htmlspecialchars($president_name); ?>" required>
+                        <input type="text" name="presidentName" value="<?php echo htmlspecialchars($president_name); ?>" required placeholder=" ">
                         <label>Applicant Name (President)</label>
                     </div>
                 </div>
 
                 <div class="row">
                     <div class="input-group">
-                        <input type="text" id="eventName" name="eventName" required>
-                        <label>Activity / Event Name</label>
+                        <input type="text" id="eventName" name="eventName" required placeholder=" ">
+                        <label id="eventNameLabel">General Event Name</label>
                     </div>
                     <div class="input-group">
-                        <input type="date" name="eventDate" id="eventDate" required>
-                        <label>Date of Event/Permission</label>
+                        <input type="datetime-local" name="eventDate" id="eventDate" required>
+                        <label>Date & Time</label>
+                    </div>
+                </div>
+
+                <div class="row" id="eventExtraFields">
+                    <div class="input-group">
+                        <input type="number" step="0.1" name="eventDuration" id="eventDuration" placeholder=" ">
+                        <label>Event Duration (Hours)</label>
+                    </div>
+                    <div class="input-group">
+                        <select name="eventAvailability" id="eventAvailability">
+                            <option value="" disabled selected></option>
+                            <option value="1">Available (Visible to all)</option>
+                            <option value="0">Not Available (Internal)</option>
+                        </select>
+                        <label>Event Availability</label>
                     </div>
                 </div>
 
@@ -284,13 +315,13 @@ if(isset($_SESSION['Email'])) {
                         <option value="Room Booking Permission for Event">Room Booking Permission</option>
                         <option value="Budget Approval for Upcoming Event">Budget Approval</option>
                         <option value="Permission to Host External Guests">Guest Permission</option>
-                        <option value="General Club Activity Permission">General Event Permission</option>
+                        <option value="General Event Permission">General Event Permission</option>
                     </select>
                     <label>Select Subject</label>
                 </div>
 
                 <div class="input-group">
-                    <textarea name="appBody" id="appBody" required></textarea>
+                    <textarea name="appBody" id="appBody" required placeholder=" "></textarea>
                     <label>Application Body (Editable)</label>
                 </div>
 
@@ -302,29 +333,60 @@ if(isset($_SESSION['Email'])) {
     </div>
 
     <script>
+        function toggleFields() {
+            const isEvent = document.getElementById('typeEvent').checked;
+            const extraFields = document.getElementById('eventExtraFields');
+            const durationInput = document.getElementById('eventDuration');
+            const availabilityInput = document.getElementById('eventAvailability');
+            const eventNameLabel = document.getElementById('eventNameLabel'); // Dynamic Label Select
+
+            if (isEvent) {
+                extraFields.style.display = 'grid'; 
+                durationInput.setAttribute('required', 'true');
+                availabilityInput.setAttribute('required', 'true');
+                eventNameLabel.innerText = 'Major Event Name'; // Changed dynamically
+            } else {
+                extraFields.style.display = 'none';
+                durationInput.removeAttribute('required');
+                availabilityInput.removeAttribute('required');
+                durationInput.value = '';
+                availabilityInput.value = '';
+                eventNameLabel.innerText = 'General Event Name'; // Changed dynamically
+            }
+            updateApplicationText();
+        }
+
         function updateApplicationText() {
             const subject = document.getElementById('subjectDropdown').value;
             const clubName = document.getElementById('clubName').value;
             const eventDateValue = document.getElementById('eventDate').value;
             const eventNameValue = document.getElementById('eventName').value;
+            const appTypeWord = document.getElementById('typeEvent').checked ? 'major event' : 'event';
             const bodyArea = document.getElementById('appBody');
 
-            const displayDate = eventDateValue ? new Date(eventDateValue).toLocaleDateString('en-GB') : '[Date]';
-            const displayEvent = eventNameValue ? eventNameValue : '[Event/Activity Name]';
+            let displayDate = '[Date]';
+            if(eventDateValue) {
+                const dateObj = new Date(eventDateValue);
+                displayDate = dateObj.toLocaleDateString('en-GB') + ' at ' + dateObj.toLocaleTimeString('en-GB', {hour: '2-digit', minute:'2-digit'});
+            }
+            
+            const displayEvent = eventNameValue ? eventNameValue : `[Event Name]`;
 
             if(subject === 'Room Booking Permission for Event') {
-                bodyArea.value = `We are planning to organize a seminar/workshop titled "${displayEvent}" on ${displayDate}. To ensure the smooth execution of this event, we kindly request your permission to book [Room Name/Number, e.g., AUDI 801] from [Start Time] to [End Time]. We assure you that all university regulations will be strictly maintained.`;
+                bodyArea.value = `We are planning to organize a seminar/workshop titled "${displayEvent}" on ${displayDate}. To ensure the smooth execution of this ${appTypeWord}, we kindly request your permission to book [Room Name/Number, e.g., AUDI 801] from [Start Time] to [End Time]. We assure you that all university regulations will be strictly maintained.`;
             } 
             else if(subject === 'Budget Approval for Upcoming Event') {
-                bodyArea.value = `We are excited to inform you that ${clubName} is organizing "${displayEvent}" on ${displayDate}. We have prepared a detailed budget proposal for this event amounting to [Total Amount BDT]. We kindly request your review and approval of the attached budget so we can proceed with the necessary arrangements.`;
+                bodyArea.value = `We are excited to inform you that ${clubName} is organizing "${displayEvent}" on ${displayDate}. We have prepared a detailed budget proposal for this ${appTypeWord} amounting to [Total Amount BDT]. We kindly request your review and approval of the attached budget so we can proceed with the necessary arrangements.`;
             }
             else if(subject === 'Permission to Host External Guests') {
-                bodyArea.value = `We are hosting a special session on ${displayDate} as part of our "${displayEvent}" where we have invited [Guest Name/Designation] as our honorable speaker(s). We kindly request your official permission to allow our guests to enter the university premises and participate in the event.`;
+                bodyArea.value = `We are hosting a special session on ${displayDate} as part of our "${displayEvent}" where we have invited [Guest Name/Designation] as our honorable speaker(s). We kindly request your official permission to allow our guests to enter the university premises and participate in the ${appTypeWord}.`;
             }
-            else if(subject === 'General Club Activity Permission') {
-                bodyArea.value = `As part of our regular club activities, ${clubName} intends to organize an internal activity named "${displayEvent}" on ${displayDate}. The primary objective of this activity is to [Briefly state purpose]. We seek your kind approval to proceed with this activity.`;
+            else if(subject === 'General Event Permission') {
+                bodyArea.value = `As part of our regular club activities, ${clubName} intends to organize an internal event named "${displayEvent}" on ${displayDate}. The primary objective of this event is to [Briefly state purpose]. We seek your kind approval to proceed with this event.`;
             }
         }
+
+        window.onload = toggleFields;
 
         document.getElementById('subjectDropdown').addEventListener('change', updateApplicationText);
         document.getElementById('eventDate').addEventListener('change', updateApplicationText);
