@@ -4,7 +4,7 @@ session_start();
 include 'connection.php';
 
 mysqli_report(MYSQLI_REPORT_OFF);
-$conn = new mysqli($db_server, $db_user, $db_pass, $db_name, $port);
+$conn = new mysqli($db_server, $db_user, $db_pass, $db_name);
 
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
