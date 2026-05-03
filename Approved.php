@@ -1,0 +1,160 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+// include 'connection.php';
+
+// ---------------------------------------------------------
+// DYNAMIC DASHBOARD ROUTING
+// ---------------------------------------------------------
+$dashboard_url = "admin_dashboard.php"; // Default fallback
+if (isset($_SESSION['role'])) {
+    if (strtolower($_SESSION['role']) === 'admin') {
+        $dashboard_url = "admin_dashboard.php";
+    } elseif (strtolower($_SESSION['role']) === 'club') {
+        $dashboard_url = "Club_dashboard.php"; 
+    }
+}
+// ---------------------------------------------------------
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application Center - ClubHub</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0b0e14; /* Your dashboard's deep dark background */
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+        }
+
+        /* Clean Back Button */
+        .back-btn {
+            position: absolute;
+            top: 30px;
+            left: 40px;
+            padding: 8px 16px;
+            background-color: #1a1d27;
+            color: #94a3b8;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .back-btn:hover {
+            background-color: #2d3748;
+            color: #ffffff;
+        }
+
+        /* Minimal Header */
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #ffffff;
+            letter-spacing: 0.5px;
+        }
+
+        .header p {
+            color: #94a3b8;
+            font-size: 1rem;
+        }
+
+        /* Card Container */
+        .cards-container {
+            display: flex;
+            gap: 25px;
+        }
+
+        /* Dashboard Matching Cards */
+        .dashboard-card {
+            width: 280px;
+            background-color: #151923; /* Same as your dashboard cards */
+            padding: 40px 25px;
+            border-radius: 12px;
+            text-align: center;
+            text-decoration: none;
+            color: white;
+            transition: all 0.2s ease-in-out;
+            border: 1px solid transparent;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            background-color: #1e2433;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+
+        .title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #f1f5f9;
+        }
+
+        .desc {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+
+    <a href="<?php echo $dashboard_url; ?>" onclick="history.back(); return false;" class="back-btn">
+        <span>←</span> Dashboard
+    </a>
+
+    <div class="header">
+        <h1>Room Booking Center</h1>
+        <p>Manage your official room booking requests</p>
+    </div>
+
+    <div class="cards-container">
+        <a href="booked_room.php" class="dashboard-card">
+            <div class="icon">🏢</div>
+            <div class="title"> Room Approvals </div>
+            <div class="desc">Approve a room for your event.</div>
+        </a>
+
+        <a href="space.php" class="dashboard-card">
+            <div class="icon">🔍</div>
+            <div class="title">Space booking</div>
+            <div class="desc">spacebooking.</div>
+        </a>
+    </div>
+
+</body>
+</html>

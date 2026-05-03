@@ -2,10 +2,9 @@
 session_start();
 include 'connection.php';
 
-
-
 $alertMessage = "";
 
+// Fetch students for the dropdown
 $students_query = "SELECT student_id, full_name FROM students ORDER BY full_name ASC";
 $students_result = @mysqli_query($con, $students_query);
 
@@ -19,9 +18,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['create_club'])) {
     $president_id = htmlspecialchars(trim($_POST['president_id']));
     $vision = htmlspecialchars(trim($_POST['vision']));
     
-    $admin_email = htmlspecialchars(trim($_POST['admin_email']));
-    $admin_pass = password_hash($_POST['admin_pass'], PASSWORD_DEFAULT); 
-    
+    // --- NEW ADDITIONS START ---
+    $social_link = !empty(trim($_POST['social_link'])) ? htmlspecialchars(trim($_POST['social_link'])) : null;
+    $advisor_name = "Admin";
+    $est_date = date("Y-m-d"); // Auto generates today's date (YYYY-MM-DD)
+    // --- NEW ADDITIONS END ---
+
     $logo_path = "uploads/dummy_logo.png"; 
     if (isset($_FILES['logo']) && $_FILES['logo']['error'] == 0) {
         $target_dir = "uploads/club_logos/";
@@ -39,15 +41,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['create_club'])) {
     mysqli_begin_transaction($con);
 
     try {
-        $stmt_club = $con->prepare("INSERT INTO clubs (club_name, category, president_name, vision, logo) VALUES (?, ?, ?, ?, ?)");
-        $stmt_club->bind_param("sssss", $club_name, $category, $president_id, $vision, $logo_path);
+        // 1. Insert into clubs table (Updated with advisor_name, est_date, social_link)
+        $stmt_club = $con->prepare("INSERT INTO clubs (club_name, category, president_name, advisor_name, est_date, social_link, vision, logo) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt_club->bind_param("ssssssss", $club_name, $category, $president_id, $advisor_name, $est_date, $social_link, $vision, $logo_path);
         $stmt_club->execute();
         $new_club_id = $stmt_club->insert_id; 
 
-        $portal = 'admin';
-        $stmt_user = $con->prepare("INSERT INTO user (name, email, password, portal, club_id) VALUES (?, ?, ?, ?, ?)");
-        $stmt_user->bind_param("ssssi", $club_name, $admin_email, $admin_pass, $portal, $new_club_id);
-        $stmt_user->execute();
+
+        $role = "EB-President";
+        $active_status = 1;
+        $stmt_member = $con->prepare("INSERT INTO club_members (student_id, club_id, Role, active) VALUES (?, ?, ?, ?)");
+        $stmt_member->bind_param("sisi", $president_id, $new_club_id, $role, $active_status);
+        $stmt_member->execute();
 
         mysqli_commit($con);
         $alertMessage = "success";
@@ -85,6 +90,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['create_club'])) {
         .form-section {
             background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 20px;
             padding: 40px; box-shadow: 0 25px 50px rgba(0,0,0,0.5); position: relative; overflow: hidden;
+            animation: slideUp 0.8s ease-out forwards;
         }
         .form-section::before {
             content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 5px;
@@ -108,16 +114,42 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['create_club'])) {
             border-color: var(--primary); outline: none; box-shadow: 0 0 15px var(--primary-glow);
         }
         
-        .credentials-box {
-            background: rgba(255, 71, 126, 0.05); border: 1px dashed var(--primary);
-            padding: 20px; border-radius: 12px; margin-top: 10px; grid-column: 1 / -1;
+        /* 3D Animated File Upload Area */
+        .upload-container {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.2); border: 2px dashed var(--border-color);
+            border-radius: 15px; padding: 30px; cursor: pointer; position: relative;
+            transform-style: preserve-3d; perspective: 1000px; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-align: center;
         }
-        .credentials-box h3 { margin-top: 0; font-size: 1rem; color: var(--primary); margin-bottom: 15px;}
+        .upload-container:hover {
+            border-color: var(--primary);
+            background: rgba(255, 71, 126, 0.05);
+            transform: translateY(-5px) rotateX(4deg) rotateY(-2deg);
+            box-shadow: -10px 15px 30px rgba(0,0,0,0.4), 0 0 20px var(--primary-glow);
+        }
+        .upload-container input[type="file"] {
+            position: absolute; width: 100%; height: 100%; top: 0; left: 0; opacity: 0; cursor: pointer; z-index: 10;
+        }
+        .upload-icon {
+            font-size: 3.5rem; margin-bottom: 10px; transition: all 0.4s ease;
+        }
+        .upload-container:hover .upload-icon {
+            transform: translateZ(40px) scale(1.1); text-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+        .upload-text {
+            color: #fff; font-size: 1.1rem; font-weight: 600; margin-bottom: 5px; transition: transform 0.4s ease;
+        }
+        .upload-container:hover .upload-text { transform: translateZ(20px); }
+        .upload-subtext {
+            color: var(--text-muted); font-size: 0.85rem; transition: transform 0.4s ease;
+        }
+        .upload-container:hover .upload-subtext { transform: translateZ(10px); }
 
         .btn-submit {
             background: linear-gradient(135deg, var(--primary), #ff9a9e); border: none; padding: 18px;
             border-radius: 10px; color: white; font-weight: bold; font-size: 1.1rem; cursor: pointer;
-            text-transform: uppercase; letter-spacing: 2px; transition: 0.3s; margin-top: 20px; width: 100%;
+            text-transform: uppercase; letter-spacing: 2px; transition: 0.3s; margin-top: 10px; width: 100%;
         }
         .btn-submit:hover { transform: translateY(-3px); box-shadow: 0 15px 30px var(--primary-glow); }
 
@@ -151,6 +183,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['create_club'])) {
         .back-btn:hover { color: var(--primary); }
         
         .error-banner { background: #ff477e; color: white; padding: 15px; text-align: center; font-weight: bold; border-radius: 8px; margin-bottom: 20px; grid-column: 1/-1;}
+
+        @keyframes slideUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -187,7 +221,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['create_club'])) {
                     </div>
 
                     <div class="input-group">
-                        <label>Appoint President (From DB)</label>
+                        <label>Appoint President (Role: EB-President)</label>
                         <select name="president_id" id="input_pres" required>
                             <option value="" disabled selected>Select Enrolled Student...</option>
                             <?php 
@@ -204,19 +238,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['create_club'])) {
 
                     <div class="input-group full-width">
                         <label>Upload Official Insignia (Logo)</label>
-                        <input type="file" name="logo" id="input_logo" accept="image/*" required>
+                        <div class="upload-container">
+                            <input type="file" name="logo" id="input_logo" accept="image/*" required>
+                            <div class="upload-icon">💠</div>
+                            <div class="upload-text" id="upload-filename">Drag & Drop Logo or Click Here</div>
+                            <div class="upload-subtext">Supports JPG, PNG, GIF</div>
+                        </div>
                     </div>
 
-                    <div class="credentials-box form-grid">
-                        <h3 class="full-width">🔐 Auto-Generate Admin Credentials</h3>
-                        <div class="input-group">
-                            <label>Admin Login Email</label>
-                            <input type="email" name="admin_email" placeholder="club@nsu.edu" required>
-                        </div>
-                        <div class="input-group">
-                            <label>Initial Password</label>
-                            <input type="password" name="admin_pass" placeholder="••••••••" required>
-                        </div>
+                    <div class="input-group full-width">
+                        <label>Social Media Link (Optional)</label>
+                        <input type="url" name="social_link" placeholder="e.g. https://facebook.com/nsu.computer.club">
                     </div>
 
                     <div class="input-group full-width">
@@ -248,8 +280,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['create_club'])) {
                         <span class="p-val" id="prev_pres">Pending Assignment</span>
                     </div>
                     <div class="p-row">
-                        <span class="p-label">System ID</span>
-                        <span class="p-val">AUTO-GEN</span>
+                        <span class="p-label">Auto-Assigned Role</span>
+                        <span class="p-val" style="color: #ff477e;">EB-President</span>
                     </div>
                 </div>
             </div>
@@ -273,6 +305,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['create_club'])) {
         document.getElementById('input_logo').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
+                // Update file name in 3D box
+                document.getElementById('upload-filename').innerText = file.name;
+                document.querySelector('.upload-icon').innerText = '✅';
+                document.querySelector('.upload-subtext').innerText = 'File selected successfully!';
+                
+                // Update Image preview
                 const reader = new FileReader();
                 reader.onload = function(event) {
                     document.getElementById('prev_img').src = event.target.result;
@@ -288,7 +326,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['create_club'])) {
             if (status === "success") {
                 Swal.fire({
                     title: 'Authorization Complete!',
-                    text: 'Club profile and Admin account generated successfully.',
+                    text: 'Club successfully created and President assigned as EB-President.',
                     icon: 'success',
                     background: '#161925', color: '#fff', confirmButtonColor: '#ff477e'
                 }).then(() => { window.location.href = 'admin_dashboard.php'; });
