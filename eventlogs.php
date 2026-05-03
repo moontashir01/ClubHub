@@ -100,6 +100,18 @@ function resolve_status(array $event): array
 
     return ['Under Review', 'status-pending'];
 }
+
+function clearance_badge_class(string $clearance): string
+{
+    $value = strtolower(trim($clearance));
+    if ($value === 'approved') {
+        return 'status-published';
+    }
+    if ($value === 'rejected') {
+        return 'status-rejected';
+    }
+    return 'status-pending';
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -145,6 +157,11 @@ function resolve_status(array $event): array
             font-size: 0.82rem;
             display: inline-block;
             border: 1px solid transparent;
+        }
+        .status-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
         }
         .status-pending { background: rgba(234, 179, 8, 0.16); color: #facc15; border-color: rgba(234, 179, 8, 0.4); }
         .status-published { background: rgba(16, 185, 129, 0.18); color: #6ee7b7; border-color: rgba(16, 185, 129, 0.42); }
@@ -213,6 +230,11 @@ function resolve_status(array $event): array
                             <?php foreach ($events as $event): ?>
                                 <?php [$statusText, $statusClass] = resolve_status($event); ?>
                                 <?php
+                                    $securityClearance = trim((string)($event['security_clearance'] ?? 'Pending'));
+                                    $adminClearance = trim((string)($event['admin_clearance'] ?? 'Pending'));
+                                    $isPublishedClearance =
+                                        strtolower($securityClearance) === 'approved' &&
+                                        strtolower($adminClearance) === 'approved';
                                     $reasonText = trim((string)($event['security_message'] ?? ''));
                                     if (strtolower($statusText) === 'rejected') {
                                         if ($reasonText === '') {
@@ -235,7 +257,20 @@ function resolve_status(array $event): array
                                             }
                                         ?>
                                     </td>
-                                    <td><span class="status-badge <?php echo htmlspecialchars($statusClass); ?>"><?php echo htmlspecialchars($statusText); ?></span></td>
+                                    <td>
+                                        <?php if ($isPublishedClearance): ?>
+                                            <span class="status-badge status-published">Published</span>
+                                        <?php else: ?>
+                                            <div class="status-stack">
+                                                <span class="status-badge <?php echo htmlspecialchars(clearance_badge_class($securityClearance)); ?>">
+                                                    <?php echo htmlspecialchars('Security: ' . $securityClearance); ?>
+                                                </span>
+                                                <span class="status-badge <?php echo htmlspecialchars(clearance_badge_class($adminClearance)); ?>">
+                                                    <?php echo htmlspecialchars('Admin: ' . $adminClearance); ?>
+                                                </span>
+                                            </div>
+                                        <?php endif; ?>
+                                    </td>
                                     <td><?php echo htmlspecialchars($reasonText); ?></td>
                                 </tr>
                             <?php endforeach; ?>

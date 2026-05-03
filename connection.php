@@ -2,11 +2,7 @@
     $db_server = 'localhost';
     $db_user = 'root';
     $db_pass = '';
-<<<<<<< HEAD
     $db_name = 'club_hub';
-=======
-    $db_name = 'joyclab';
->>>>>>> accd2d80a69ff2ab1a3469709dd24a23ba5a953e
     
     try {
         
